@@ -1,0 +1,18 @@
+# Imgram Bot API
+
+Imgram is an independent chat service with a Telegram-style Bot API subset. Imgram bot tokens are not Telegram tokens and must never be sent to api.telegram.org.
+
+Canonical API root: https://bot.premsir.com
+Method URL: https://bot.premsir.com/bot<TOKEN>/<METHOD>
+
+Start here: https://github.com/kidrauhl123/imgram-bot-api/blob/main/CONNECT.md
+API reference: https://github.com/kidrauhl123/imgram-bot-api/blob/main/BOT_API.md
+Compatibility: https://github.com/kidrauhl123/imgram-bot-api/blob/main/COMPATIBILITY.md
+OpenAPI: https://raw.githubusercontent.com/kidrauhl123/imgram-bot-api/main/openapi.json
+
+Supported methods:
+getMe, sendMessage, sendChecklist, editMessageText, deleteMessage,
+pinChatMessage, unpinChatMessage, toggleChecklist, appendChecklist,
+getUpdates, setWebhook, deleteWebhook, getWebhookInfo.
+
+Only documented methods and fields are supported. Prefer raw HTTP for v1. OpenClaw is experimental; stock CC Connect and Hermes integrations require adapters.

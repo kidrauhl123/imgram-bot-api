@@ -1,0 +1,428 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Imgram Bot API",
+    "version": "1.0.0-experimental",
+    "description": "Telegram-style compatible subset for Imgram. Imgram tokens are independent from Telegram tokens and must not be sent to api.telegram.org."
+  },
+  "servers": [
+    {
+      "url": "https://bot.premsir.com",
+      "description": "Imgram production Bot API"
+    }
+  ],
+  "paths": {
+    "/bot{token}/getMe": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "get": {
+        "operationId": "getMe",
+        "summary": "Return the authenticated bot",
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/sendMessage": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "sendMessage",
+        "summary": "Send a plain-text message",
+        "requestBody": {"$ref": "#/components/requestBodies/SendMessage"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/sendChecklist": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "sendChecklist",
+        "summary": "Send an Imgram native checklist",
+        "requestBody": {"$ref": "#/components/requestBodies/SendChecklist"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/editMessageText": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "editMessageText",
+        "summary": "Edit a plain-text message",
+        "requestBody": {"$ref": "#/components/requestBodies/EditMessageText"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/deleteMessage": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "deleteMessage",
+        "summary": "Delete a message",
+        "description": "Imgram v1 currently reads message_id only; chat_id is not required.",
+        "requestBody": {"$ref": "#/components/requestBodies/MessageId"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/pinChatMessage": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "pinChatMessage",
+        "summary": "Pin a message silently",
+        "requestBody": {"$ref": "#/components/requestBodies/ChatMessageId"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/unpinChatMessage": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "unpinChatMessage",
+        "summary": "Unpin a message",
+        "requestBody": {"$ref": "#/components/requestBodies/ChatMessageId"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/toggleChecklist": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "toggleChecklist",
+        "summary": "Change checklist task completion state",
+        "requestBody": {"$ref": "#/components/requestBodies/ToggleChecklist"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/appendChecklist": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "appendChecklist",
+        "summary": "Append tasks to an existing checklist",
+        "requestBody": {"$ref": "#/components/requestBodies/AppendChecklist"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/getUpdates": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "get": {
+        "operationId": "getUpdates",
+        "summary": "Receive updates using long polling",
+        "parameters": [
+          {"name": "offset", "in": "query", "schema": {"type": "integer", "format": "int64", "default": 0}},
+          {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 100}},
+          {"name": "timeout", "in": "query", "schema": {"type": "integer", "minimum": 0, "maximum": 30, "default": 0}}
+        ],
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "401": {"$ref": "#/components/responses/Error"},
+          "409": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/setWebhook": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "setWebhook",
+        "summary": "Configure an HTTPS webhook",
+        "requestBody": {"$ref": "#/components/requestBodies/SetWebhook"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/deleteWebhook": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "deleteWebhook",
+        "summary": "Remove the webhook",
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/getWebhookInfo": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "get": {
+        "operationId": "getWebhookInfo",
+        "summary": "Return webhook status",
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "BotToken": {
+        "name": "token",
+        "in": "path",
+        "required": true,
+        "description": "Secret token issued by Imgram BotFather. Never send it to api.telegram.org.",
+        "schema": {"type": "string", "minLength": 1}
+      }
+    },
+    "requestBodies": {
+      "SendMessage": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/SendMessageRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SendMessageRequest"}}
+        }
+      },
+      "SendChecklist": {
+        "required": true,
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SendChecklistRequest"}}}
+      },
+      "EditMessageText": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/EditMessageTextRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/EditMessageTextRequest"}}
+        }
+      },
+      "MessageId": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/MessageIdRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/MessageIdRequest"}}
+        }
+      },
+      "ChatMessageId": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/ChatMessageIdRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/ChatMessageIdRequest"}}
+        }
+      },
+      "ToggleChecklist": {
+        "required": true,
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ToggleChecklistRequest"}}}
+      },
+      "AppendChecklist": {
+        "required": true,
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AppendChecklistRequest"}}}
+      },
+      "SetWebhook": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/SetWebhookRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SetWebhookRequest"}}
+        }
+      }
+    },
+    "responses": {
+      "Success": {
+        "description": "Successful Bot API response. The exact result type is defined by the method reference.",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SuccessResponse"}}}
+      },
+      "Error": {
+        "description": "Bot API error",
+        "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ErrorResponse"}}}
+      }
+    },
+    "schemas": {
+      "SuccessResponse": {
+        "type": "object",
+        "required": ["ok", "result"],
+        "properties": {
+          "ok": {"type": "boolean", "const": true},
+          "result": {}
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["ok", "error_code", "description"],
+        "properties": {
+          "ok": {"type": "boolean", "const": false},
+          "error_code": {"type": "integer"},
+          "description": {"type": "string"}
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "is_bot", "first_name"],
+        "properties": {
+          "id": {"type": "integer", "format": "int64"},
+          "is_bot": {"type": "boolean"},
+          "first_name": {"type": "string"},
+          "last_name": {"type": "string"},
+          "username": {"type": "string"}
+        }
+      },
+      "Chat": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {"type": "integer", "format": "int64"},
+          "type": {"type": "string", "enum": ["private", "group"]},
+          "first_name": {"type": "string"},
+          "last_name": {"type": "string"},
+          "username": {"type": "string"},
+          "title": {"type": "string"}
+        }
+      },
+      "ChecklistTaskInput": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "id": {"type": "integer", "format": "int32", "minimum": 1},
+          "text": {"type": "string", "minLength": 1}
+        }
+      },
+      "ChecklistTask": {
+        "type": "object",
+        "required": ["id", "text", "completed"],
+        "properties": {
+          "id": {"type": "integer", "format": "int32", "minimum": 1},
+          "text": {"type": "string"},
+          "completed": {"type": "boolean"},
+          "completed_by_user_id": {"type": "integer", "format": "int64"},
+          "completion_date": {"type": "integer", "format": "int64"}
+        }
+      },
+      "ChecklistInput": {
+        "type": "object",
+        "required": ["title", "tasks"],
+        "properties": {
+          "title": {"type": "string", "minLength": 1},
+          "tasks": {"type": "array", "minItems": 1, "maxItems": 30, "items": {"$ref": "#/components/schemas/ChecklistTaskInput"}},
+          "others_can_append": {"type": "boolean", "default": true},
+          "others_can_complete": {"type": "boolean", "default": true}
+        }
+      },
+      "Checklist": {
+        "type": "object",
+        "required": ["title", "tasks", "others_can_append", "others_can_complete"],
+        "properties": {
+          "title": {"type": "string"},
+          "tasks": {"type": "array", "items": {"$ref": "#/components/schemas/ChecklistTask"}},
+          "others_can_append": {"type": "boolean"},
+          "others_can_complete": {"type": "boolean"}
+        }
+      },
+      "Message": {
+        "type": "object",
+        "required": ["message_id", "date", "from", "chat"],
+        "properties": {
+          "message_id": {"type": "integer", "format": "int32"},
+          "date": {"type": "integer", "format": "int64"},
+          "from": {"$ref": "#/components/schemas/User"},
+          "chat": {"$ref": "#/components/schemas/Chat"},
+          "text": {"type": "string"},
+          "checklist": {"$ref": "#/components/schemas/Checklist"}
+        }
+      },
+      "Update": {
+        "type": "object",
+        "required": ["update_id"],
+        "properties": {
+          "update_id": {"type": "integer", "format": "int64"},
+          "message": {"$ref": "#/components/schemas/Message"},
+          "edited_message": {"$ref": "#/components/schemas/Message"}
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": ["chat_id", "text"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "text": {"type": "string", "minLength": 1},
+          "reply_to_message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "SendChecklistRequest": {
+        "type": "object",
+        "required": ["chat_id", "checklist"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "checklist": {"$ref": "#/components/schemas/ChecklistInput"},
+          "reply_to_message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "EditMessageTextRequest": {
+        "type": "object",
+        "required": ["chat_id", "message_id", "text"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "message_id": {"type": "integer", "format": "int32", "minimum": 1},
+          "text": {"type": "string", "minLength": 1}
+        }
+      },
+      "MessageIdRequest": {
+        "type": "object",
+        "required": ["message_id"],
+        "properties": {"message_id": {"type": "integer", "format": "int32", "minimum": 1}}
+      },
+      "ChatMessageIdRequest": {
+        "type": "object",
+        "required": ["chat_id", "message_id"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "ToggleChecklistRequest": {
+        "allOf": [
+          {"$ref": "#/components/schemas/ChatMessageIdRequest"},
+          {
+            "type": "object",
+            "properties": {
+              "completed": {"type": "array", "items": {"type": "integer", "format": "int32", "minimum": 1}, "default": []},
+              "incompleted": {"type": "array", "items": {"type": "integer", "format": "int32", "minimum": 1}, "default": []}
+            }
+          }
+        ]
+      },
+      "AppendChecklistRequest": {
+        "allOf": [
+          {"$ref": "#/components/schemas/ChatMessageIdRequest"},
+          {
+            "type": "object",
+            "required": ["tasks"],
+            "properties": {
+              "tasks": {"type": "array", "minItems": 1, "maxItems": 30, "items": {"$ref": "#/components/schemas/ChecklistTaskInput"}}
+            }
+          }
+        ]
+      },
+      "SetWebhookRequest": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+          "secret_token": {"type": "string"}
+        }
+      }
+    }
+  }
+}
