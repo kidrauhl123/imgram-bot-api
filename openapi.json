@@ -27,7 +27,7 @@
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
         "operationId": "sendMessage",
-        "summary": "Send a plain-text message",
+        "summary": "Send a text message with optional formatting",
         "requestBody": {"$ref": "#/components/requestBodies/SendMessage"},
         "responses": {
           "200": {"$ref": "#/components/responses/Success"},
@@ -53,7 +53,7 @@
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
         "operationId": "editMessageText",
-        "summary": "Edit a plain-text message",
+        "summary": "Edit a text message with optional formatting",
         "requestBody": {"$ref": "#/components/requestBodies/EditMessageText"},
         "responses": {
           "200": {"$ref": "#/components/responses/Success"},
@@ -339,7 +339,24 @@
           "from": {"$ref": "#/components/schemas/User"},
           "chat": {"$ref": "#/components/schemas/Chat"},
           "text": {"type": "string"},
+          "entities": {"type": "array", "items": {"$ref": "#/components/schemas/MessageEntity"}},
           "checklist": {"$ref": "#/components/schemas/Checklist"}
+        }
+      },
+      "MessageEntity": {
+        "type": "object",
+        "required": ["type", "offset", "length"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["mention", "hashtag", "cashtag", "bot_command", "url", "email", "phone_number", "bold", "italic", "underline", "strikethrough", "spoiler", "code", "pre", "text_link", "text_mention", "blockquote", "expandable_blockquote", "custom_emoji"]
+          },
+          "offset": {"type": "integer", "format": "int32", "minimum": 0, "description": "Offset in UTF-16 code units."},
+          "length": {"type": "integer", "format": "int32", "minimum": 1, "description": "Length in UTF-16 code units."},
+          "url": {"type": "string"},
+          "language": {"type": "string"},
+          "custom_emoji_id": {"type": "string"},
+          "user": {"$ref": "#/components/schemas/User"}
         }
       },
       "Update": {
@@ -357,6 +374,14 @@
         "properties": {
           "chat_id": {"type": "integer", "format": "int64"},
           "text": {"type": "string", "minLength": 1},
+          "parse_mode": {"type": "string", "enum": ["HTML", "MarkdownV2", "Markdown"]},
+          "entities": {
+            "description": "Array in JSON requests, or a JSON-encoded array in form requests. Mutually exclusive with parse_mode.",
+            "oneOf": [
+              {"type": "array", "maxItems": 100, "items": {"$ref": "#/components/schemas/MessageEntity"}},
+              {"type": "string"}
+            ]
+          },
           "reply_to_message_id": {"type": "integer", "format": "int32", "minimum": 1}
         }
       },
@@ -375,7 +400,15 @@
         "properties": {
           "chat_id": {"type": "integer", "format": "int64"},
           "message_id": {"type": "integer", "format": "int32", "minimum": 1},
-          "text": {"type": "string", "minLength": 1}
+          "text": {"type": "string", "minLength": 1},
+          "parse_mode": {"type": "string", "enum": ["HTML", "MarkdownV2", "Markdown"]},
+          "entities": {
+            "description": "Array in JSON requests, or a JSON-encoded array in form requests. Mutually exclusive with parse_mode.",
+            "oneOf": [
+              {"type": "array", "maxItems": 100, "items": {"$ref": "#/components/schemas/MessageEntity"}},
+              {"type": "string"}
+            ]
+          }
         }
       },
       "MessageIdRequest": {

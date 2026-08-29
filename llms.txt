@@ -15,4 +15,6 @@ getMe, sendMessage, sendChecklist, editMessageText, deleteMessage,
 pinChatMessage, unpinChatMessage, toggleChecklist, appendChecklist,
 getUpdates, setWebhook, deleteWebhook, getWebhookInfo.
 
+sendMessage and editMessageText support parse_mode=HTML, MarkdownV2, or Markdown, and explicit Telegram-style entities. Incoming Message objects include entities.
+
 Only documented methods and fields are supported. Prefer raw HTTP for v1. OpenClaw is experimental; stock CC Connect and Hermes integrations require adapters.

@@ -1,6 +1,6 @@
 # Imgram Bot API v1
 
-Updated: 2026-08-29
+Updated: 2026-08-30
 
 The Imgram Bot API is an experimental, Telegram-style compatible subset for Imgram bots. Only the methods and fields documented here are supported.
 
@@ -69,7 +69,14 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 | `from` | User | Sender. |
 | `chat` | Chat | Conversation containing the message. |
 | `text` | String | Present on text messages. |
+| `entities` | MessageEntity[] | Optional structured formatting for `text`. Offsets and lengths use UTF-16 code units. |
 | `checklist` | Checklist | Present on checklist messages. |
+
+### MessageEntity
+
+Each entity has `type`, `offset`, and `length`. Imgram currently supports `mention`, `hashtag`, `cashtag`, `bot_command`, `url`, `email`, `phone_number`, `bold`, `italic`, `underline`, `strikethrough`, `spoiler`, `code`, `pre`, `text_link`, `text_mention`, `blockquote`, `expandable_blockquote`, and `custom_emoji`.
+
+Depending on the type, an entity can additionally contain `url`, `language`, `custom_emoji_id`, or `user`. Like Telegram, offsets and lengths count UTF-16 code units, so most emoji count as two.
 
 ### Checklist
 
@@ -104,9 +111,9 @@ An update contains either `message` for a new incoming message or `edited_messag
 | Method | Required parameters | Optional parameters | Returns |
 |---|---|---|---|
 | `getMe` | — | — | User |
-| `sendMessage` | `chat_id`, `text` | `reply_to_message_id` | Message |
+| `sendMessage` | `chat_id`, `text` | `parse_mode`, `entities`, `reply_to_message_id` | Message |
 | `sendChecklist` | `chat_id`, `checklist` | `reply_to_message_id` | Message |
-| `editMessageText` | `chat_id`, `message_id`, `text` | — | Message |
+| `editMessageText` | `chat_id`, `message_id`, `text` | `parse_mode`, `entities` | Message |
 | `deleteMessage` | `message_id` | — | `true` |
 | `pinChatMessage` | `chat_id`, `message_id` | — | `true` |
 | `unpinChatMessage` | `chat_id`, `message_id` | — | `true` |
@@ -127,7 +134,21 @@ curl "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/getMe"
 
 ### sendMessage
 
-Sends plain text. `parse_mode`, `entities`, link previews, and `reply_markup` are not currently exposed.
+Sends text with optional Telegram-style formatting. `parse_mode` accepts `HTML`, `MarkdownV2`, or legacy `Markdown`. Alternatively, pass `entities` as an array in JSON requests or as a JSON-encoded array in form requests. Do not specify both `parse_mode` and `entities`.
+
+HTML example with bold text and a spoiler:
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendMessage" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "chat_id": 123456,
+    "text": "<b>Result</b>: <tg-spoiler>hidden detail</tg-spoiler>",
+    "parse_mode": "HTML"
+  }'
+```
+
+Supported HTML tags include `b`, `strong`, `i`, `em`, `u`, `ins`, `s`, `strike`, `del`, `span class="tg-spoiler"`, `tg-spoiler`, `a`, `code`, `pre`, `blockquote`, and `tg-emoji`. MarkdownV2 supports bold, italic, underline, strikethrough, spoilers, inline code, fenced code, inline links, custom emoji, and block quotations.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendMessage" \
@@ -164,7 +185,7 @@ The checklist fields may also be supplied at the top level, but the nested `chec
 
 ### editMessageText
 
-Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. This method does not edit checklist contents.
+Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents.
 
 ### deleteMessage
 

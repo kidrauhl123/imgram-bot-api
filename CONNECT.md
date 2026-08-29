@@ -65,12 +65,15 @@ while True:
         if message and message.get("text"):
             call("sendMessage", {
                 "chat_id": message["chat"]["id"],
-                "text": f"You said: {message['text']}",
+                "text": f"<b>You said:</b> {message['text']}",
+                "parse_mode": "HTML",
             })
         offset = update["update_id"] + 1
 ```
 
 For production, persist `offset` outside process memory, add exponential backoff, handle HTTP errors, and shut down cleanly.
+
+`sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML.
 
 ## Existing agent frameworks
 
