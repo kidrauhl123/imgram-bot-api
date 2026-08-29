@@ -136,6 +136,8 @@ curl "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/getMe"
 
 Sends text with optional Telegram-style formatting. `parse_mode` accepts `HTML`, `MarkdownV2`, or legacy `Markdown`. Alternatively, pass `entities` as an array in JSON requests or as a JSON-encoded array in form requests. Do not specify both `parse_mode` and `entities`.
 
+Bare `@usernames` are recognized as mention entities automatically, including when they follow Chinese text or punctuation. If a mention entity is supplied explicitly, Imgram keeps a single entity for that range.
+
 HTML example with bold text and a spoiler:
 
 ```bash

@@ -7,7 +7,7 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | Telegram-style method | Imgram v1 | Important differences |
 |---|---:|---|
 | `getMe` | Yes | Core User fields only. |
-| `sendMessage` | Partial | Text, replies, `HTML`/`MarkdownV2`/`Markdown` parse modes, and explicit entities; no link-preview options or `reply_markup`. |
+| `sendMessage` | Partial | Text, replies, automatic `@mentions`, `HTML`/`MarkdownV2`/`Markdown` parse modes, and explicit entities; no link-preview options or `reply_markup`. |
 | `editMessageText` | Partial | Text and the same parse modes/entities as `sendMessage`; no inline-message editing or `reply_markup`. |
 | `deleteMessage` | Partial | `message_id` is used; `chat_id` is not currently required or read. |
 | `pinChatMessage` | Partial | Silent pin; advanced notification/business parameters are absent. |
