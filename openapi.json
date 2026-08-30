@@ -36,6 +36,47 @@
         }
       }
     },
+    "/bot{token}/sendPhoto": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "sendPhoto",
+        "summary": "Upload and send a photo",
+        "requestBody": {"$ref": "#/components/requestBodies/SendPhoto"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"},
+          "413": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/sendDocument": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "sendDocument",
+        "summary": "Upload and send a document",
+        "requestBody": {"$ref": "#/components/requestBodies/SendDocument"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"},
+          "413": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/sendChatAction": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "sendChatAction",
+        "summary": "Publish a transient typing or upload status",
+        "requestBody": {"$ref": "#/components/requestBodies/SendChatAction"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
     "/bot{token}/sendChecklist": {
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
@@ -199,6 +240,25 @@
           "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SendMessageRequest"}}
         }
       },
+      "SendPhoto": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {"schema": {"$ref": "#/components/schemas/SendPhotoRequest"}}
+        }
+      },
+      "SendDocument": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {"schema": {"$ref": "#/components/schemas/SendDocumentRequest"}}
+        }
+      },
+      "SendChatAction": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/SendChatActionRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SendChatActionRequest"}}
+        }
+      },
       "SendChecklist": {
         "required": true,
         "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SendChecklistRequest"}}}
@@ -340,7 +400,33 @@
           "chat": {"$ref": "#/components/schemas/Chat"},
           "text": {"type": "string"},
           "entities": {"type": "array", "items": {"$ref": "#/components/schemas/MessageEntity"}},
+          "caption": {"type": "string"},
+          "caption_entities": {"type": "array", "items": {"$ref": "#/components/schemas/MessageEntity"}},
+          "photo": {"type": "array", "items": {"$ref": "#/components/schemas/PhotoSize"}},
+          "document": {"$ref": "#/components/schemas/Document"},
           "checklist": {"$ref": "#/components/schemas/Checklist"}
+        }
+      },
+      "PhotoSize": {
+        "type": "object",
+        "required": ["file_id", "file_unique_id", "width", "height"],
+        "properties": {
+          "file_id": {"type": "string"},
+          "file_unique_id": {"type": "string"},
+          "width": {"type": "integer", "format": "int32"},
+          "height": {"type": "integer", "format": "int32"},
+          "file_size": {"type": "integer", "format": "int64"}
+        }
+      },
+      "Document": {
+        "type": "object",
+        "required": ["file_id", "file_unique_id"],
+        "properties": {
+          "file_id": {"type": "string"},
+          "file_unique_id": {"type": "string"},
+          "file_name": {"type": "string"},
+          "mime_type": {"type": "string"},
+          "file_size": {"type": "integer", "format": "int64"}
         }
       },
       "MessageEntity": {
@@ -383,6 +469,50 @@
             ]
           },
           "reply_to_message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "MediaCaptionFields": {
+        "type": "object",
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "caption": {"type": "string"},
+          "parse_mode": {"type": "string", "enum": ["HTML", "MarkdownV2", "Markdown"]},
+          "caption_entities": {
+            "description": "A JSON-encoded MessageEntity array in multipart requests. Mutually exclusive with parse_mode.",
+            "type": "string"
+          },
+          "reply_to_message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "SendPhotoRequest": {
+        "allOf": [
+          {"$ref": "#/components/schemas/MediaCaptionFields"},
+          {
+            "type": "object",
+            "required": ["chat_id", "photo"],
+            "properties": {"photo": {"type": "string", "format": "binary"}}
+          }
+        ]
+      },
+      "SendDocumentRequest": {
+        "allOf": [
+          {"$ref": "#/components/schemas/MediaCaptionFields"},
+          {
+            "type": "object",
+            "required": ["chat_id", "document"],
+            "properties": {"document": {"type": "string", "format": "binary"}}
+          }
+        ]
+      },
+      "SendChatActionRequest": {
+        "type": "object",
+        "required": ["chat_id", "action"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "action": {
+            "type": "string",
+            "enum": ["typing", "upload_photo", "record_video", "upload_video", "record_voice", "upload_voice", "upload_document", "choose_sticker", "find_location", "record_video_note", "upload_video_note"]
+          }
         }
       },
       "SendChecklistRequest": {

@@ -11,10 +11,12 @@ Compatibility: https://github.com/kidrauhl123/imgram-bot-api/blob/main/COMPATIBI
 OpenAPI: https://raw.githubusercontent.com/kidrauhl123/imgram-bot-api/main/openapi.json
 
 Supported methods:
-getMe, sendMessage, sendChecklist, editMessageText, deleteMessage,
+getMe, sendMessage, sendPhoto, sendDocument, sendChatAction, sendChecklist, editMessageText, deleteMessage,
 pinChatMessage, unpinChatMessage, toggleChecklist, appendChecklist,
 getUpdates, setWebhook, deleteWebhook, getWebhookInfo.
 
-sendMessage and editMessageText support parse_mode=HTML, MarkdownV2, or Markdown, and explicit Telegram-style entities. Bare @usernames are recognized automatically. Incoming Message objects include entities.
+sendMessage and editMessageText support parse_mode=HTML, MarkdownV2, or Markdown, and explicit Telegram-style entities. Without parse_mode/entities, a conservative Agent CommonMark subset is auto-detected. Bare @usernames are recognized automatically. Incoming Message objects include entities.
+
+sendPhoto and sendDocument accept Telegram-style multipart uploads up to 50 MiB. sendChatAction supports typing and Telegram upload/record action names.
 
 Only documented methods and fields are supported. Prefer raw HTTP for v1. OpenClaw is experimental; stock CC Connect and Hermes integrations require adapters.

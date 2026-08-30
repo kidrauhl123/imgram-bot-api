@@ -25,6 +25,8 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendMessage" \
   --data-urlencode 'text=Hello from an Imgram bot'
 ```
 
+The same endpoint style supports typing indicators (`sendChatAction`) and multipart photo/file uploads (`sendPhoto`, `sendDocument`).
+
 Consume incoming messages with [`getUpdates`](BOT_API.md#getupdates) or a [webhook](BOT_API.md#webhooks).
 
 ## Documentation

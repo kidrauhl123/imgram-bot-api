@@ -73,7 +73,9 @@ while True:
 
 For production, persist `offset` outside process memory, add exponential backoff, handle HTTP errors, and shut down cleanly.
 
-`sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML.
+`sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML. When a framework omits `parse_mode`, Imgram also recognizes a conservative CommonMark subset so ordinary Agent output such as `**bold**` and inline code does not leak formatting markers.
+
+For a slow response, call `sendChatAction` with `action=typing` immediately and refresh it periodically until the answer is sent. Send generated photos or files with Telegram-compatible multipart `sendPhoto` and `sendDocument` requests. Uploads are limited to 50 MiB; URL and reusable `file_id` inputs are not part of v1 yet.
 
 ## Existing agent frameworks
 

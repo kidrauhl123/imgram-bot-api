@@ -7,7 +7,10 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | Telegram-style method | Imgram v1 | Important differences |
 |---|---:|---|
 | `getMe` | Yes | Core User fields only. |
-| `sendMessage` | Partial | Text, replies, automatic `@mentions`, `HTML`/`MarkdownV2`/`Markdown` parse modes, and explicit entities; no link-preview options or `reply_markup`. |
+| `sendMessage` | Partial | Text, replies, automatic `@mentions`, `HTML`/`MarkdownV2`/`Markdown` parse modes, explicit entities, and a tolerant CommonMark fallback for Agent output; no link-preview options or `reply_markup`. |
+| `sendPhoto` | Partial | Multipart upload up to 50 MiB, caption formatting, and replies; no URL or `file_id` upload input. |
+| `sendDocument` | Partial | Multipart upload up to 50 MiB, filename/MIME type, caption formatting, and replies; no URL or `file_id` upload input. |
+| `sendChatAction` | Yes | Telegram action names are accepted and rendered by Imgram clients. |
 | `editMessageText` | Partial | Text and the same parse modes/entities as `sendMessage`; no inline-message editing or `reply_markup`. |
 | `deleteMessage` | Partial | `message_id` is used; `chat_id` is not currently required or read. |
 | `pinChatMessage` | Partial | Silent pin; advanced notification/business parameters are absent. |
@@ -19,9 +22,8 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | `sendChecklist` | Yes | Imgram extension for native checklists. |
 | `toggleChecklist` | Yes | Imgram extension for changing task state. |
 | `appendChecklist` | Yes | Imgram extension for adding tasks. |
-| `sendPhoto`, `sendDocument`, `sendAudio`, `sendVoice` | No | User-to-user media exists in the app; Bot API media methods do not yet exist. |
+| `sendAudio`, `sendVoice` | No | Dedicated Bot API audio/voice methods are not exposed yet. |
 | `getFile` | No | Bot file download is not exposed yet. |
-| `sendChatAction` | No | Typing/upload status is not exposed yet. |
 | `setMyCommands`, `deleteMyCommands`, `getMyCommands` | No | Command menus are not exposed yet. |
 | `answerCallbackQuery` | No | Inline keyboards and callback queries are not exposed yet. |
 | `setMessageReaction` | No | Bot reactions are not exposed yet. |
@@ -37,7 +39,8 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | Incoming text entities | Yes |
 | Incoming checklist messages | Yes |
 | Checklist completion changes | Yes, as `edited_message` |
-| Incoming media metadata and files | No public Bot API contract yet |
+| Incoming photo/document metadata | Yes |
+| Bot file download | No; `getFile` is not exposed yet |
 | Long polling | Yes |
 | HTTPS webhook | Yes |
 

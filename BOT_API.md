@@ -12,7 +12,7 @@ The production endpoint is:
 https://bot.premsir.com/bot<TOKEN>/<METHOD>
 ```
 
-Method names are case-insensitive. Read-only calls may use `GET`; all calls may use `POST`. POST parameters may be sent as JSON or `application/x-www-form-urlencoded` data. Request bodies are limited to 2 MiB when decoded as JSON.
+Method names are case-insensitive. Read-only calls may use `GET`; all calls may use `POST`. POST parameters may be sent as JSON or `application/x-www-form-urlencoded` data. Media uploads use `multipart/form-data`. JSON request bodies are limited to 2 MiB; uploaded files are limited to 50 MiB.
 
 Do not send an Imgram token to `api.telegram.org`. Imgram and Telegram tokens are not interchangeable.
 
@@ -70,6 +70,10 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 | `chat` | Chat | Conversation containing the message. |
 | `text` | String | Present on text messages. |
 | `entities` | MessageEntity[] | Optional structured formatting for `text`. Offsets and lengths use UTF-16 code units. |
+| `caption` | String | Present when a media message has a caption. |
+| `caption_entities` | MessageEntity[] | Optional structured formatting for `caption`. |
+| `photo` | PhotoSize[] | Present on photo messages. |
+| `document` | Document | Present on document messages. |
 | `checklist` | Checklist | Present on checklist messages. |
 
 ### MessageEntity
@@ -112,6 +116,9 @@ An update contains either `message` for a new incoming message or `edited_messag
 |---|---|---|---|
 | `getMe` | — | — | User |
 | `sendMessage` | `chat_id`, `text` | `parse_mode`, `entities`, `reply_to_message_id` | Message |
+| `sendPhoto` | `chat_id`, multipart `photo` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
+| `sendDocument` | `chat_id`, multipart `document` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
+| `sendChatAction` | `chat_id`, `action` | — | `true` |
 | `sendChecklist` | `chat_id`, `checklist` | `reply_to_message_id` | Message |
 | `editMessageText` | `chat_id`, `message_id`, `text` | `parse_mode`, `entities` | Message |
 | `deleteMessage` | `message_id` | — | `true` |
@@ -136,6 +143,8 @@ curl "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/getMe"
 
 Sends text with optional Telegram-style formatting. `parse_mode` accepts `HTML`, `MarkdownV2`, or legacy `Markdown`. Alternatively, pass `entities` as an array in JSON requests or as a JSON-encoded array in form requests. Do not specify both `parse_mode` and `entities`.
 
+When neither `parse_mode` nor `entities` is supplied, Imgram tolerantly recognizes the common Agent Markdown forms `**bold**`, `~~strikethrough~~`, `||spoiler||`, inline/fenced code, and inline links. Unmatched markers remain literal. This compatibility fallback exists for Agent frameworks that emit CommonMark but omit Telegram's `parse_mode`; explicit formatting is still preferred.
+
 Bare `@usernames` are recognized as mention entities automatically, including when they follow Chinese text or punctuation. If a mention entity is supplied explicitly, Imgram keeps a single entity for that range.
 
 HTML example with bold text and a spoiler:
@@ -158,6 +167,32 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendMessage" \
   --data-urlencode 'reply_to_message_id=11' \
   --data-urlencode 'text=Received'
 ```
+
+### sendPhoto and sendDocument
+
+Upload a photo or ordinary file using the same multipart field names as Telegram. Multipart uploads and `attach://<field>` references are supported; remote HTTP URLs and previously returned `file_id` values are not yet accepted as upload input. Files are limited to 50 MiB.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendDocument" \
+  -F 'chat_id=123456' \
+  -F 'document=@report.csv;type=text/csv' \
+  -F 'caption=<b>Daily report</b>' \
+  -F 'parse_mode=HTML'
+```
+
+Use `photo=@image.png` with `sendPhoto`. Captions accept `parse_mode` or `caption_entities` and use the same formatting behavior as `sendMessage`.
+
+### sendChatAction
+
+Publishes a transient Telegram-style status in the chat. For example, call `typing` before an Agent starts a slow response and refresh it periodically while generation continues.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendChatAction" \
+  --data-urlencode 'chat_id=123456' \
+  --data-urlencode 'action=typing'
+```
+
+Supported actions are `typing`, `upload_photo`, `record_video`, `upload_video`, `record_voice`, `upload_voice`, `upload_document`, `choose_sticker`, `find_location`, `record_video_note`, and `upload_video_note`.
 
 ### sendChecklist
 
