@@ -84,8 +84,8 @@ class ImgramActionTool(Tool):
                 },
                 "completed": {"type": ["array", "null"], "items": {"type": "integer"}},
                 "incompleted": {"type": ["array", "null"], "items": {"type": "integer"}},
-                "others_can_append": {"type": ["boolean", "null"]},
-                "others_can_complete": {"type": ["boolean", "null"]},
+                "others_can_add_tasks": {"type": ["boolean", "null"]},
+                "others_can_mark_tasks_as_done": {"type": ["boolean", "null"]},
                 "markdown": {"type": ["string", "null"], "description": "Native article Markdown."},
             },
             "required": ["action"],
@@ -103,8 +103,8 @@ class ImgramActionTool(Tool):
         tasks: list[Any] | None = None,
         completed: list[int] | None = None,
         incompleted: list[int] | None = None,
-        others_can_append: bool | None = None,
-        others_can_complete: bool | None = None,
+        others_can_add_tasks: bool | None = None,
+        others_can_mark_tasks_as_done: bool | None = None,
         markdown: str | None = None,
     ) -> str:
         request = current_request_context()
@@ -156,8 +156,14 @@ class ImgramActionTool(Tool):
             payload["checklist"] = {
                 "title": title,
                 "tasks": tasks,
-                "others_can_append": bool(others_can_append),
-                "others_can_complete": True if others_can_complete is None else others_can_complete,
+                "others_can_add_tasks": (
+                    True if others_can_add_tasks is None else others_can_add_tasks
+                ),
+                "others_can_mark_tasks_as_done": (
+                    True
+                    if others_can_mark_tasks_as_done is None
+                    else others_can_mark_tasks_as_done
+                ),
             }
         elif action == "toggle_checklist":
             method = "toggleChecklist"

@@ -88,6 +88,7 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 | `media_group_id` | String | Shared by messages in the same album. |
 | `article` | Object | Present on an imGram native rich article. |
 | `checklist` | Checklist | Present on checklist messages. |
+| `checklist_tasks_done` | ChecklistTasksDone | Present on a checklist completion service message. |
 
 ### MessageEntity
 
@@ -101,10 +102,20 @@ Depending on the type, an entity can additionally contain `url`, `language`, `cu
 |---|---|---|
 | `title` | String | Checklist title. |
 | `tasks` | ChecklistTask[] | One to 30 tasks. |
-| `others_can_append` | Boolean | Whether chat participants may add tasks. |
-| `others_can_complete` | Boolean | Whether chat participants may change completion state. |
+| `others_can_add_tasks` | Boolean | Whether chat participants may add tasks. |
+| `others_can_mark_tasks_as_done` | Boolean | Whether chat participants may change completion state. |
 
-Each task contains `id`, `text`, and `completed`. A completed task additionally contains `completed_by_user_id` and `completion_date`.
+Each task contains `id` and `text`. A completed task additionally contains `completed_by_user` and `completion_date`, using the same shape as Telegram Bot API.
+
+### ChecklistTasksDone
+
+| Field | Type | Description |
+|---|---|---|
+| `checklist_message` | Message | The checklist after applying the change. |
+| `marked_as_done_task_ids` | Integer[] | Task IDs marked complete by this action. |
+| `marked_as_not_done_task_ids` | Integer[] | Task IDs marked incomplete by this action. |
+
+The containing service `Message.from` identifies the person who performed the action. The Android client renders the same native “who marked what” service prompt from this event.
 
 ### Update
 
@@ -121,7 +132,7 @@ Each task contains `id`, `text`, and `completed`. A completed task additionally 
 }
 ```
 
-An update contains either `message` for a new incoming message or `edited_message` for a change. Checklist completion changes are delivered as `edited_message`, including changes to a checklist originally sent by the bot.
+An update contains either `message` for a new incoming message or `edited_message` for a content edit. Checklist completion changes arrive as a new `message` containing `checklist_tasks_done`; the referenced checklist snapshot already contains the resulting state.
 
 ## Supported methods
 
@@ -262,13 +273,13 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendChecklist" \
         {"id": 2, "text": "Prepare supplies"},
         {"id": 3, "text": "Confirm departure time"}
       ],
-      "others_can_append": true,
-      "others_can_complete": true
+      "others_can_add_tasks": true,
+      "others_can_mark_tasks_as_done": true
     }
   }'
 ```
 
-The title must not be empty. A checklist must contain 1–30 non-empty tasks. Positive task IDs must be unique within the checklist. When omitted, IDs are assigned from 1 in list order. Both permission fields default to `true`.
+The title must not be empty. A checklist must contain 1–30 non-empty tasks. Positive task IDs must be unique within the checklist. When omitted, IDs are assigned from 1 in list order. Both permission fields default to `true`. The older imGram names `others_can_append` and `others_can_complete` remain accepted as input aliases.
 
 The checklist fields may also be supplied at the top level, but the nested `checklist` object is preferred.
 

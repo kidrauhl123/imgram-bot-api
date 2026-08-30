@@ -12,6 +12,11 @@ Install it with the Python executable from the nanobot environment:
 Then configure `channels.imgram` as documented in
 [`../nanobot.md`](../nanobot.md) and restart the gateway.
 
+The overlay also handles Telegram-compatible `checklist_tasks_done` service
+messages. It forwards the actor, changed task IDs and titles, and the complete
+resulting checklist state into the Agent session as both readable context and
+structured inbound metadata.
+
 Run the regression test from an environment containing nanobot and pytest:
 
 ```bash

@@ -21,6 +21,64 @@ from nanobot.channels.telegram.runtime import TelegramChannel, TelegramConfig
 from nanobot.config.paths import get_media_dir
 
 
+def _user_display(user: Any) -> str:
+    if user is None:
+        return "unknown user"
+    name = " ".join(
+        value for value in (getattr(user, "first_name", None), getattr(user, "last_name", None))
+        if value
+    ) or getattr(user, "username", None) or "unknown user"
+    username = getattr(user, "username", None)
+    username_part = f", @{username}" if username else ""
+    return f"{name} (user_id={getattr(user, 'id', 'unknown')}{username_part})"
+
+
+def _checklist_tasks_done_payload(message: Any) -> tuple[str, dict[str, Any]]:
+    """Turn Telegram's native checklist service update into explicit Agent context."""
+    event = message.checklist_tasks_done
+    checklist_message = getattr(event, "checklist_message", None)
+    checklist = getattr(checklist_message, "checklist", None)
+    tasks = list(getattr(checklist, "tasks", ()) or ())
+    tasks_by_id = {int(task.id): task for task in tasks}
+    done_ids = [int(task_id) for task_id in (event.marked_as_done_task_ids or ())]
+    not_done_ids = [int(task_id) for task_id in (event.marked_as_not_done_task_ids or ())]
+
+    def task_text(task_id: int) -> str:
+        task = tasks_by_id.get(task_id)
+        return getattr(task, "text", None) or "unknown task"
+
+    title = getattr(checklist, "title", None) or "Untitled checklist"
+    lines = [
+        "[imGram checklist status update]",
+        f"Actor: {_user_display(getattr(message, 'from_user', None))}",
+        f"Checklist: {title} (message_id={getattr(checklist_message, 'message_id', 'unknown')})",
+    ]
+    lines.extend(f"Marked completed: [{task_id}] {task_text(task_id)}" for task_id in done_ids)
+    lines.extend(f"Marked not completed: [{task_id}] {task_text(task_id)}" for task_id in not_done_ids)
+    lines.append("Current checklist state:")
+    for task in tasks:
+        completed = bool(
+            getattr(task, "completion_date", None)
+            or getattr(task, "completed_by_user", None)
+            or getattr(task, "completed_by_chat", None)
+        )
+        line = f"- [{'x' if completed else ' '}] [{task.id}] {task.text}"
+        if completed:
+            completed_by = getattr(task, "completed_by_user", None) or getattr(
+                task, "completed_by_chat", None
+            )
+            if completed_by is not None:
+                line += f" — completed by {_user_display(completed_by)}"
+        lines.append(line)
+
+    metadata = {
+        "checklist_message_id": getattr(checklist_message, "message_id", None),
+        "marked_as_done_task_ids": done_ids,
+        "marked_as_not_done_task_ids": not_done_ids,
+    }
+    return "\n".join(lines), metadata
+
+
 class ImgramConfig(TelegramConfig):
     """Telegram-compatible settings with an isolated imGram API root."""
 
@@ -106,6 +164,9 @@ class ImgramChannel(TelegramChannel):
         )
         self._app.add_handler(MessageHandler(filters.Regex(r"^/help(?:@\w+)?$"), self._on_help))
         self._app.add_handler(
+            MessageHandler(filters.StatusUpdate.CHECKLIST_TASKS_DONE, self._on_message)
+        )
+        self._app.add_handler(
             MessageHandler(
                 (
                     filters.TEXT
@@ -166,6 +227,33 @@ class ImgramChannel(TelegramChannel):
 
         while self._running:
             await asyncio.sleep(1)
+
+    async def _process_message_update(self, update, context) -> None:
+        message = update.message
+        if not message or getattr(message, "checklist_tasks_done", None) is None:
+            await super()._process_message_update(update, context)
+            return
+
+        user = update.effective_user
+        if user is None:
+            return
+        sender_id = self._sender_id(user)
+        if not self.is_allowed(sender_id):
+            await self._send_pairing_code_if_private(sender_id, message, user)
+            return
+
+        self._remember_thread_context(message)
+        self._chat_ids[sender_id] = message.chat_id
+        content, checklist_metadata = _checklist_tasks_done_payload(message)
+        metadata = self._build_message_metadata(message, user)
+        metadata["checklist_tasks_done"] = checklist_metadata
+        await self._handle_message(
+            sender_id=sender_id,
+            chat_id=str(message.chat_id),
+            content=content,
+            metadata=metadata,
+            session_key=self._derive_topic_session_key(message),
+        )
 
     @staticmethod
     def _derive_topic_session_key(message) -> str | None:
