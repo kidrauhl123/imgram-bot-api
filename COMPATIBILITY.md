@@ -11,7 +11,7 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | `sendPhoto` | Partial | Multipart upload up to 50 MiB, caption formatting, and replies; no URL or `file_id` upload input. |
 | `sendDocument` | Partial | Multipart upload up to 50 MiB, filename/MIME type, caption formatting, and replies; no URL or `file_id` upload input. |
 | `sendChatAction` | Yes | Telegram action names are accepted and rendered by Imgram clients. |
-| `setMessageReaction` | Partial | One standard emoji per bot is supported; pass an empty array to clear it. Custom emoji and multiple simultaneous reactions are not supported. |
+| `setMessageReaction` | Partial | One of `👍 👎 ❤ 🔥 😁 🤔` per bot is supported; pass an empty array to clear it. Custom emoji and multiple simultaneous reactions are not supported. |
 | `editMessageText` | Partial | Text and the same parse modes/entities as `sendMessage`; no inline-message editing or `reply_markup`. |
 | `deleteMessage` | Partial | `message_id` is used; `chat_id` is not currently required or read. |
 | `pinChatMessage` | Partial | Silent pin; advanced notification/business parameters are absent. |

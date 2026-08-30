@@ -197,7 +197,7 @@ Supported actions are `typing`, `upload_photo`, `record_video`, `upload_video`, 
 
 ### setMessageReaction
 
-Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. Imgram v1 accepts one of `👍 ❤ 🔥 🎉 👏 🤣 😮 😢 🤔 👀 🙏 💯`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
+Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. Imgram v1 accepts one of `👍 👎 ❤ 🔥 😁 🤔`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \
@@ -205,11 +205,11 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \
   -d '{
     "chat_id": 123456,
     "message_id": 42,
-    "reaction": [{"type": "emoji", "emoji": "👀"}]
+    "reaction": [{"type": "emoji", "emoji": "🔥"}]
   }'
 ```
 
-Custom emoji and multiple simultaneous reactions are not supported in v1. `is_big` is accepted, but self-hosted clients currently render a static local emoji instead of Telegram's cloud-hosted reaction animation.
+Custom emoji and multiple simultaneous reactions are not supported in v1. `is_big` is accepted. Imgram's Android client bundles and renders the corresponding animated reaction assets without connecting to Telegram's cloud.
 
 ### sendChecklist
 
@@ -329,4 +329,4 @@ Private chat IDs are positive. Basic group IDs are negative.
 
 ## Current boundary
 
-Notable unsupported Telegram Bot API features include media upload/download, inline keyboards and callback queries, bot commands, chat actions, reactions, channels, and supergroups. See [COMPATIBILITY.md](COMPATIBILITY.md) before using a Telegram library or connector unchanged.
+Notable unsupported Telegram Bot API features include bot-side file downloads, inline keyboards and callback queries, bot command menus, channels, and supergroups. See [COMPATIBILITY.md](COMPATIBILITY.md) before using a Telegram library or connector unchanged.
