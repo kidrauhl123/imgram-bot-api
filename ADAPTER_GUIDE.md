@@ -51,7 +51,7 @@ streaming: true
 typing_refresh_seconds: 4
 stream_edit_interval_ms: 800
 parse_mode: HTML
-ack_reaction: optional; one of 👍 👎 ❤ 🔥 😁 🤔
+ack_reaction: optional; one documented standard reaction, such as 🤔
 ```
 
 Construct every method URL as:

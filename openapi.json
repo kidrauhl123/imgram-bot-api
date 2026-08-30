@@ -544,7 +544,7 @@
         "required": ["type", "emoji"],
         "properties": {
           "type": {"type": "string", "const": "emoji"},
-          "emoji": {"type": "string", "enum": ["👍", "❤", "❤️", "🔥", "🎉", "👏", "🤣", "😮", "😢", "🤔", "👀", "🙏", "💯"]}
+          "emoji": {"type": "string", "enum": ["👍", "👎", "❤", "❤️", "🔥", "😁", "🤔", "👏", "🤯", "😱", "😭", "🤩", "🤮", "👌", "🥴", "🥱", "🤡", "🐳", "🎉", "🥰", "🤣"]}
         }
       },
       "SetMessageReactionRequest": {
