@@ -1,18 +1,18 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Imgram Bot API",
+    "title": "imGram Bot API",
     "version": "1.0.0-experimental",
-    "description": "Telegram-style compatible subset for Imgram. Imgram tokens are independent from Telegram tokens and must not be sent to api.telegram.org."
+    "description": "Telegram-style compatible subset for imGram. imGram tokens are independent from Telegram tokens and must not be sent to api.telegram.org."
   },
   "externalDocs": {
-    "description": "Imgram adapter implementation and UX contract",
+    "description": "imGram adapter implementation and UX contract",
     "url": "https://github.com/kidrauhl123/imgram-bot-api/blob/main/ADAPTER_GUIDE.md"
   },
   "servers": [
     {
       "url": "https://bot.premsir.com",
-      "description": "Imgram production Bot API"
+      "description": "imGram production Bot API"
     }
   ],
   "paths": {
@@ -98,7 +98,7 @@
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
         "operationId": "sendChecklist",
-        "summary": "Send an Imgram native checklist",
+        "summary": "Send an imGram native checklist",
         "requestBody": {"$ref": "#/components/requestBodies/SendChecklist"},
         "responses": {
           "200": {"$ref": "#/components/responses/Success"},
@@ -125,7 +125,7 @@
       "post": {
         "operationId": "deleteMessage",
         "summary": "Delete a message",
-        "description": "Imgram v1 currently reads message_id only; chat_id is not required.",
+        "description": "imGram v1 currently reads message_id only; chat_id is not required.",
         "requestBody": {"$ref": "#/components/requestBodies/MessageId"},
         "responses": {
           "200": {"$ref": "#/components/responses/Success"},
@@ -160,6 +160,52 @@
         }
       }
     },
+    "/bot{token}/getFile": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "get": {
+        "operationId": "getFile",
+        "summary": "Resolve a bot-visible file_id to an authenticated download path",
+        "parameters": [
+          {"name": "file_id", "in": "query", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      },
+      "post": {
+        "operationId": "getFilePost",
+        "summary": "Resolve a bot-visible file_id to an authenticated download path",
+        "requestBody": {"$ref": "#/components/requestBodies/GetFile"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/file/bot{token}/{filePath}": {
+      "parameters": [
+        {"$ref": "#/components/parameters/BotToken"},
+        {
+          "name": "filePath",
+          "in": "path",
+          "required": true,
+          "description": "The complete file_path returned by getFile, including its directory prefix.",
+          "schema": {"type": "string"}
+        }
+      ],
+      "get": {
+        "operationId": "downloadFile",
+        "summary": "Download a file authorized for this bot",
+        "responses": {
+          "200": {"description": "File bytes", "content": {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}},
+          "401": {"$ref": "#/components/responses/Error"},
+          "404": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
     "/bot{token}/toggleChecklist": {
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
@@ -179,6 +225,43 @@
         "operationId": "appendChecklist",
         "summary": "Append tasks to an existing checklist",
         "requestBody": {"$ref": "#/components/requestBodies/AppendChecklist"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/setMyCommands": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "setMyCommands",
+        "summary": "Register the default bot command menu",
+        "requestBody": {"$ref": "#/components/requestBodies/SetMyCommands"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/getMyCommands": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "get": {
+        "operationId": "getMyCommands",
+        "summary": "Return the default bot command menu",
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
+    "/bot{token}/deleteMyCommands": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "deleteMyCommands",
+        "summary": "Clear the default bot command menu",
         "responses": {
           "200": {"$ref": "#/components/responses/Success"},
           "400": {"$ref": "#/components/responses/Error"},
@@ -245,7 +328,7 @@
         "name": "token",
         "in": "path",
         "required": true,
-        "description": "Secret token issued by Imgram BotFather. Never send it to api.telegram.org.",
+        "description": "Secret token issued by imGram BotFather. Never send it to api.telegram.org.",
         "schema": {"type": "string", "minLength": 1}
       }
     },
@@ -308,6 +391,13 @@
           "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/ChatMessageIdRequest"}}
         }
       },
+      "GetFile": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/GetFileRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/GetFileRequest"}}
+        }
+      },
       "ToggleChecklist": {
         "required": true,
         "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ToggleChecklistRequest"}}}
@@ -315,6 +405,13 @@
       "AppendChecklist": {
         "required": true,
         "content": {"application/json": {"schema": {"$ref": "#/components/schemas/AppendChecklistRequest"}}}
+      },
+      "SetMyCommands": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/SetMyCommandsRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SetMyCommandsRequest"}}
+        }
       },
       "SetWebhook": {
         "required": true,
@@ -451,6 +548,24 @@
           "file_name": {"type": "string"},
           "mime_type": {"type": "string"},
           "file_size": {"type": "integer", "format": "int64"}
+        }
+      },
+      "File": {
+        "type": "object",
+        "required": ["file_id", "file_unique_id", "file_path"],
+        "properties": {
+          "file_id": {"type": "string"},
+          "file_unique_id": {"type": "string"},
+          "file_size": {"type": "integer", "format": "int64"},
+          "file_path": {"type": "string"}
+        }
+      },
+      "BotCommand": {
+        "type": "object",
+        "required": ["command", "description"],
+        "properties": {
+          "command": {"type": "string", "pattern": "^[a-z0-9_]{1,32}$"},
+          "description": {"type": "string", "minLength": 1, "maxLength": 256}
         }
       },
       "MessageEntity": {
@@ -600,6 +715,28 @@
         "properties": {
           "chat_id": {"type": "integer", "format": "int64"},
           "message_id": {"type": "integer", "format": "int32", "minimum": 1}
+        }
+      },
+      "GetFileRequest": {
+        "type": "object",
+        "required": ["file_id"],
+        "properties": {"file_id": {"type": "string", "minLength": 1}}
+      },
+      "SetMyCommandsRequest": {
+        "type": "object",
+        "required": ["commands"],
+        "properties": {
+          "commands": {
+            "description": "Array in JSON requests, or a JSON-encoded array in form requests.",
+            "oneOf": [
+              {"type": "array", "maxItems": 100, "items": {"$ref": "#/components/schemas/BotCommand"}},
+              {"type": "string"}
+            ]
+          },
+          "scope": {
+            "description": "Only {\"type\":\"default\"} is supported.",
+            "oneOf": [{"type": "object"}, {"type": "string"}]
+          }
         }
       },
       "ToggleChecklistRequest": {

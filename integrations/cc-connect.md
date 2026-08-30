@@ -1,10 +1,10 @@
 # CC Connect
 
-Status: **an Imgram adapter is required**.
+Status: **an imGram adapter is required**.
 
-The current CC Connect Telegram platform cannot be made Imgram-compatible by changing only the bot token. Its Telegram implementation targets Telegram's API root, and its normal feature set includes methods that Imgram v1 does not yet expose, including bot-side file downloads, command setup, and callback queries.
+The current CC Connect Telegram platform cannot be made imGram-compatible by changing only the bot token. Its Telegram implementation targets Telegram's API root, and its normal feature set still includes methods that imGram v1 does not yet expose, including callback queries and additional media types. imGram now supports bot-side file downloads and default command setup.
 
-Do not configure an Imgram token under an unchanged `type = "telegram"` integration: that risks sending the token to the wrong service and will not produce a working connection.
+Do not configure an imGram token under an unchanged `type = "telegram"` integration: that risks sending the token to the wrong service and will not produce a working connection.
 
 ## Recommended implementation
 
@@ -14,7 +14,7 @@ Add a first-class `imgram` platform to CC Connect that:
 - uses only methods marked supported in [COMPATIBILITY.md](../COMPATIBILITY.md);
 - maps incoming `message` and `edited_message` updates;
 - degrades unsupported bot-side downloads, commands, and buttons explicitly;
-- exposes Imgram checklists as a native capability instead of flattening them to text.
+- exposes imGram checklists as a native capability instead of flattening them to text.
 
 Its channel runtime should implement the deterministic typing, streaming,
 cleanup, retry, and media rules in [ADAPTER_GUIDE.md](../ADAPTER_GUIDE.md),

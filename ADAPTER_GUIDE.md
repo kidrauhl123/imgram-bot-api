@@ -1,6 +1,6 @@
-# Build an AI-friendly Imgram adapter
+# Build an AI-friendly imGram adapter
 
-This guide is for the human or coding agent implementing Imgram support in an
+This guide is for the human or coding agent implementing imGram support in an
 Agent framework. Read [CONNECT.md](CONNECT.md) and
 [COMPATIBILITY.md](COMPATIBILITY.md) first.
 
@@ -16,7 +16,7 @@ configurable, with `https://bot.premsir.com` as the default.
 
 ## Responsibility boundary
 
-| Agent or tool layer decides | Imgram adapter enforces |
+| Agent or tool layer decides | imGram adapter enforces |
 |---|---|
 | What the answer says | Where every HTTP request is sent |
 | Whether a user-requested message should be pinned, deleted, or reacted to | Typing lifecycle and refresh timing |
@@ -26,6 +26,10 @@ configurable, with `https://bot.premsir.com` as the default.
 Do not add prompt text such as "remember to call typing every four seconds".
 The model can forget it, call it too late, or leave it running after an error.
 Implement that behavior in transport code.
+
+Bot-authored `editMessageText` calls automatically hide the client “edited”
+marker. Adapters do not need a separate flag for streaming-message edits;
+human-authored edits remain visibly marked.
 
 Expose explicit structured operations to the Agent core when the framework
 supports tools or typed outbound events:
@@ -61,9 +65,10 @@ Construct every method URL as:
 ```
 
 The adapter MUST NOT fall back to `api.telegram.org`. Prefer a first-class
-channel name such as `imgram` instead of placing an Imgram token in an
-unchanged `telegram` channel. Verify the token with `getMe` at startup, but do
-not call unsupported setup methods such as `setMyCommands`.
+channel name such as `imgram` instead of placing an imGram token in an
+unchanged `telegram` channel. Verify the token with `getMe` at startup. Also
+register the adapter's stable command list with `setMyCommands`; imGram uses it
+for the command-menu button and `/` autocomplete.
 
 ## Default response lifecycle
 
@@ -169,7 +174,7 @@ single user-facing answer stream.
 
 ## Media behavior
 
-Imgram v1 exposes `sendPhoto` and `sendDocument` only.
+imGram v1 exposes Telegram-style `sendPhoto`, `sendDocument`, and `getFile`.
 
 The adapter SHOULD:
 
@@ -183,11 +188,16 @@ The adapter SHOULD:
 - enforce the framework's workspace/path and SSRF safety policy;
 - report an unsupported or failed attachment visibly instead of silently
   dropping it.
+- for an incoming photo, select the largest useful `photo` entry, call
+  `getFile(file_id)`, download `/file/bot<TOKEN>/<file_path>`, and pass the
+  bytes and MIME type into the Agent's actual image/multimodal input;
+- download incoming documents the same way and expose them through the host
+  framework's safe attachment/workspace mechanism.
 
-Do not pass remote URLs or Telegram `file_id` values to Imgram v1. Do not call
-`sendVideo`, `sendVoice`, `sendAudio`, or `getFile`; they are not implemented.
-Incoming photo/document metadata can be delivered to the Agent, but bot-side
-file download is not available yet.
+Do not pass remote URLs or Telegram `file_id` values to imGram v1. Do not call
+`sendVideo`, `sendVoice`, or `sendAudio`; they are not implemented. A `file_id`
+from an incoming update is valid as input to `getFile`, but is not yet valid as
+the upload argument to `sendPhoto` or `sendDocument`.
 
 ## Reactions, edits, pins, and checklists
 
@@ -199,6 +209,14 @@ Use only the documented reaction set and treat decorative acknowledgement
 failures as non-fatal. User-requested operations such as `pinChatMessage`,
 `unpinChatMessage`, `editMessageText`, and checklist changes should return a
 visible error to the Agent if they fail.
+
+`pin_message(chat_id, message_id)` must be a real structured tool or outbound
+event. Its implementation calls `pinChatMessage` and returns success only for
+an HTTP success containing `{"ok":true,"result":true}`. If the framework
+cannot expose that tool, tell the user pinning is unavailable; never let the
+model claim it pinned a message after producing text alone. Add a request-level
+test that fails unless invoking the tool emits exactly one `pinChatMessage`
+request with the retained `chat_id` and `message_id`.
 
 Retain `chat_id` and `message_id` in the framework's inbound metadata so later
 tools can target the correct message. Do not ask the model to infer IDs from
@@ -217,23 +235,23 @@ displayed text.
 - Bound retries and use exponential backoff for transient failures.
 - Do not retry authentication, invalid-parameter, or unknown-method errors.
 - Be careful retrying message-creation requests after an ambiguous timeout:
-  Imgram v1 has no public idempotency key, so a blind retry can duplicate a
+  imGram v1 has no public idempotency key, so a blind retry can duplicate a
   message.
 
 For webhooks, validate `X-Telegram-Bot-Api-Secret-Token` before accepting an
 update. The header name is Telegram-compatible even though the service is
-Imgram.
+imGram.
 
 ## Adapting an existing Telegram channel
 
 Do not assume that changing the base URL is the entire port. Audit the channel
 and make these changes explicitly:
 
-1. Add an Imgram-specific configuration type with a configurable API root.
-2. Prove through a request test that an Imgram token is never sent to any other
+1. Add an imGram-specific configuration type with a configurable API root.
+2. Prove through a request test that an imGram token is never sent to any other
    host.
-3. Disable unsupported startup calls, command menus, inline keyboards,
-   callback queries, file downloads, channels, and supergroups.
+3. Keep Telegram-style command registration, but disable unsupported startup
+   calls, inline keyboards, callback queries, channels, and supergroups.
 4. Map outbound video/audio/voice artifacts to `sendDocument`, or expose a
    clear unsupported result.
 5. Implement the response lifecycle above in channel code.
@@ -248,19 +266,25 @@ and media routing live in channel code rather than in the model prompt.
 
 The adapter is not complete until a user can verify all applicable items:
 
-- [ ] `getMe` succeeds against the configured Imgram API root.
-- [ ] Network inspection shows no Imgram token sent to `api.telegram.org` or
+- [ ] `getMe` succeeds against the configured imGram API root.
+- [ ] Network inspection shows no imGram token sent to `api.telegram.org` or
       another host.
 - [ ] Polling restarts without replaying already completed turns.
+- [ ] `setMyCommands` produces a visible command menu and `/` autocomplete in
+      the bot chat.
 - [ ] A deliberately slow answer shows `正在输入` promptly and keeps it alive.
 - [ ] A streamed answer grows inside one message instead of producing many
       bubbles.
 - [ ] The final edit contains correct rich text and no leaked Markdown markers.
 - [ ] Cancelling or failing a turn stops typing and cleans temporary reaction
       state.
-- [ ] Photo and document uploads render in the Imgram client.
+- [ ] Photo and document uploads render in the imGram client.
+- [ ] A user-sent photo is downloaded through `getFile` and reaches the
+      Agent's image input as bytes, not merely as metadata.
 - [ ] Reaction add/clear, message edit, pin, and unpin work through structured
       adapter operations.
+- [ ] A failed pin request is reported as a failure; the Agent never claims it
+      succeeded without `ok=true` and `result=true`.
 - [ ] Private chats and groups keep independent stream state.
 - [ ] Unsupported methods fail explicitly and do not prevent basic startup.
 
@@ -269,13 +293,16 @@ The adapter is not complete until a user can verify all applicable items:
 Give the coding agent the repository and this instruction:
 
 ```text
-Implement a first-class Imgram adapter. Read CONNECT.md, ADAPTER_GUIDE.md,
+Implement a first-class imGram adapter. Read CONNECT.md, ADAPTER_GUIDE.md,
 COMPATIBILITY.md, and BOT_API.md before editing. Hard-code the deterministic
 chat UX lifecycle into the adapter: typing refresh, coalesced one-message
 streaming, final formatting, cleanup, bounded retries, media routing, and
 structured message operations. Keep token and API root configurable. Never
-send an Imgram token to api.telegram.org, never silently fall back to Telegram,
-and do not call methods outside Imgram's documented compatibility subset.
+send an imGram token to api.telegram.org, never silently fall back to Telegram,
+and do not call methods outside imGram's documented compatibility subset.
+Download incoming media with getFile and pass the bytes to the Agent's real
+attachment or multimodal input. Implement pin/unpin as typed tools and never
+report success unless the Bot API returned ok=true and result=true.
 Add tests for the lifecycle and host routing, then report any missing server
 capability instead of faking it in the model prompt.
 ```

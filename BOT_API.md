@@ -1,8 +1,8 @@
-# Imgram Bot API v1
+# imGram Bot API v1
 
 Updated: 2026-08-30
 
-The Imgram Bot API is an experimental, Telegram-style compatible subset for Imgram bots. Only the methods and fields documented here are supported.
+The imGram Bot API is an experimental, Telegram-style compatible subset for imGram bots. Only the methods and fields documented here are supported.
 
 Framework authors should also read [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). It
 defines how supported methods should be composed into typing, streaming,
@@ -18,7 +18,7 @@ https://bot.premsir.com/bot<TOKEN>/<METHOD>
 
 Method names are case-insensitive. Read-only calls may use `GET`; all calls may use `POST`. POST parameters may be sent as JSON or `application/x-www-form-urlencoded` data. Media uploads use `multipart/form-data`. JSON request bodies are limited to 2 MiB; uploaded files are limited to 50 MiB.
 
-Do not send an Imgram token to `api.telegram.org`. Imgram and Telegram tokens are not interchangeable.
+Do not send an imGram token to `api.telegram.org`. imGram and Telegram tokens are not interchangeable.
 
 Successful response:
 
@@ -47,7 +47,7 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 
 | Field | Type | Description |
 |---|---|---|
-| `id` | Integer | Imgram user ID. |
+| `id` | Integer | imGram user ID. |
 | `is_bot` | Boolean | Whether this user is a bot. |
 | `first_name` | String | Display name. |
 | `last_name` | String | Last name; may be empty. |
@@ -82,7 +82,7 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 
 ### MessageEntity
 
-Each entity has `type`, `offset`, and `length`. Imgram currently supports `mention`, `hashtag`, `cashtag`, `bot_command`, `url`, `email`, `phone_number`, `bold`, `italic`, `underline`, `strikethrough`, `spoiler`, `code`, `pre`, `text_link`, `text_mention`, `blockquote`, `expandable_blockquote`, and `custom_emoji`.
+Each entity has `type`, `offset`, and `length`. imGram currently supports `mention`, `hashtag`, `cashtag`, `bot_command`, `url`, `email`, `phone_number`, `bold`, `italic`, `underline`, `strikethrough`, `spoiler`, `code`, `pre`, `text_link`, `text_mention`, `blockquote`, `expandable_blockquote`, and `custom_emoji`.
 
 Depending on the type, an entity can additionally contain `url`, `language`, `custom_emoji_id`, or `user`. Like Telegram, offsets and lengths count UTF-16 code units, so most emoji count as two.
 
@@ -129,6 +129,10 @@ An update contains either `message` for a new incoming message or `edited_messag
 | `deleteMessage` | `message_id` | — | `true` |
 | `pinChatMessage` | `chat_id`, `message_id` | — | `true` |
 | `unpinChatMessage` | `chat_id`, `message_id` | — | `true` |
+| `getFile` | `file_id` | — | File |
+| `setMyCommands` | `commands` | `scope` (`default` only) | `true` |
+| `getMyCommands` | — | `scope` (`default` only) | BotCommand[] |
+| `deleteMyCommands` | — | `scope` (`default` only) | `true` |
 | `toggleChecklist` | `chat_id`, `message_id` | `completed`, `incompleted` | Message |
 | `appendChecklist` | `chat_id`, `message_id`, `tasks` | — | Message |
 | `getUpdates` | — | `offset`, `limit`, `timeout` | Update[] |
@@ -148,9 +152,9 @@ curl "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/getMe"
 
 Sends text with optional Telegram-style formatting. `parse_mode` accepts `HTML`, `MarkdownV2`, or legacy `Markdown`. Alternatively, pass `entities` as an array in JSON requests or as a JSON-encoded array in form requests. Do not specify both `parse_mode` and `entities`.
 
-When neither `parse_mode` nor `entities` is supplied, Imgram tolerantly recognizes the common Agent Markdown forms `**bold**`, `~~strikethrough~~`, `||spoiler||`, inline/fenced code, and inline links. Unmatched markers remain literal. This compatibility fallback exists for Agent frameworks that emit CommonMark but omit Telegram's `parse_mode`; explicit formatting is still preferred.
+When neither `parse_mode` nor `entities` is supplied, imGram tolerantly recognizes the common Agent Markdown forms `**bold**`, `~~strikethrough~~`, `||spoiler||`, inline/fenced code, and inline links. Unmatched markers remain literal. This compatibility fallback exists for Agent frameworks that emit CommonMark but omit Telegram's `parse_mode`; explicit formatting is still preferred.
 
-Bare `@usernames` are recognized as mention entities automatically, including when they follow Chinese text or punctuation. If a mention entity is supplied explicitly, Imgram keeps a single entity for that range.
+Bare `@usernames` are recognized as mention entities automatically, including when they follow Chinese text or punctuation. If a mention entity is supplied explicitly, imGram keeps a single entity for that range.
 
 HTML example with bold text and a spoiler:
 
@@ -201,7 +205,7 @@ Supported actions are `typing`, `upload_photo`, `record_video`, `upload_video`, 
 
 ### setMessageReaction
 
-Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. Imgram v1 accepts one of `👍 👎 ❤ 🔥 😁 🤔 👏 🤯 😱 😭 🤩 🤮 👌 🥴 🥱 🤡 🐳 🎉 🥰 🤣`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
+Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. imGram v1 accepts one of `👍 👎 ❤ 🔥 😁 🤔 👏 🤯 😱 😭 🤩 🤮 👌 🥴 🥱 🤡 🐳 🎉 🥰 🤣`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \
@@ -213,11 +217,11 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \
   }'
 ```
 
-Custom emoji and multiple simultaneous reactions are not supported in v1. `is_big` is accepted. Imgram's Android client bundles and renders the corresponding animated reaction assets without connecting to Telegram's cloud.
+Custom emoji and multiple simultaneous reactions are not supported in v1. `is_big` is accepted. imGram's Android client bundles and renders the corresponding animated reaction assets without connecting to Telegram's cloud.
 
 ### sendChecklist
 
-Sends an Imgram native checklist. `checklist` accepts an object in JSON requests or a JSON-encoded string in form requests.
+Sends an imGram native checklist. `checklist` accepts an object in JSON requests or a JSON-encoded string in form requests.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendChecklist" \
@@ -243,15 +247,38 @@ The checklist fields may also be supplied at the top level, but the nested `chec
 
 ### editMessageText
 
-Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents. For streamed Agent output, send the first non-empty preview once, retain its `message_id`, coalesce later deltas, and edit no more often than the adapter interval described in [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md).
+Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents. For streamed Agent output, send the first non-empty preview once, retain its `message_id`, coalesce later deltas, and edit no more often than the adapter interval described in [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). Bot-authored edits render without an “edited” marker, matching Telegram's streaming-response experience; human-authored message edits still show the marker.
 
 ### deleteMessage
 
-Deletes a message using `message_id`. Unlike Telegram's method signature, Imgram v1 does not currently read `chat_id` for deletion.
+Deletes a message using `message_id`. Unlike Telegram's method signature, imGram v1 does not currently read `chat_id` for deletion.
 
 ### pinChatMessage and unpinChatMessage
 
 Pins or unpins the specified message. Pinning is silent in the current implementation.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/pinChatMessage" \
+  -H 'Content-Type: application/json' \
+  -d '{"chat_id":123456,"message_id":42}'
+```
+
+An adapter must treat the operation as completed only when the HTTP request succeeds and the JSON response contains both `"ok": true` and `"result": true`. Preserve `chat.id` and `message_id` from the incoming Update; never invent an ID or claim success after only generating explanatory text.
+
+### getFile and downloading incoming media
+
+Incoming photos contain a Telegram-style `photo` size array; documents contain a `document` object. Read the desired object's `file_id`, call `getFile`, and then download the returned `file_path` from the authenticated file endpoint.
+
+```bash
+file_path="$({
+  curl -fsS "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/getFile?file_id=$FILE_ID"
+} | jq -r '.result.file_path')"
+
+curl -fS "$IMGRAM_API_ROOT/file/bot$IMGRAM_BOT_TOKEN/$file_path" \
+  --output incoming-media
+```
+
+The download URL contains the bot token and must be protected like any other Bot API request. A bot can download only files that were registered for that bot. The adapter should pass downloaded image bytes to the Agent's multimodal/image input rather than giving the model only the `file_id` metadata.
 
 ### toggleChecklist
 
@@ -282,6 +309,24 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/appendChecklist" \
   }'
 ```
 
+### setMyCommands, getMyCommands, and deleteMyCommands
+
+Registers the command list shown by the imGram command-menu button and by the `/` autocomplete inside a bot chat. Command names contain 1–32 lowercase ASCII letters, digits, or underscores; descriptions contain 1–256 characters. The default scope is supported, with at most 100 commands.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMyCommands" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "commands": [
+      {"command":"start","description":"Start the assistant"},
+      {"command":"new_task","description":"Create a task"},
+      {"command":"help","description":"Show help"}
+    ]
+  }'
+```
+
+Use `getMyCommands` to read the current list and `deleteMyCommands` to clear it. Adapters should register their stable user-facing commands during setup or startup; do not invent commands from a model response. Language-specific and chat-specific command scopes are not yet supported.
+
 ### getUpdates
 
 Uses long polling to receive Update objects.
@@ -306,7 +351,7 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setWebhook" \
   --data-urlencode 'secret_token=replace-with-a-separate-random-secret'
 ```
 
-Imgram POSTs one JSON Update at a time. When `secret_token` is set, requests include:
+imGram POSTs one JSON Update at a time. When `secret_token` is set, requests include:
 
 ```text
 X-Telegram-Bot-Api-Secret-Token: <secret_token>
@@ -325,7 +370,7 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/deleteWebhook"
 
 ## Finding chat IDs
 
-1. Open the bot in Imgram and send it a message, or add it to a group and send a message there.
+1. Open the bot in imGram and send it a message, or add it to a group and send a message there.
 2. Call `getUpdates`.
 3. Read `message.chat.id` from the update.
 
@@ -333,4 +378,4 @@ Private chat IDs are positive. Basic group IDs are negative.
 
 ## Current boundary
 
-Notable unsupported Telegram Bot API features include bot-side file downloads, inline keyboards and callback queries, bot command menus, channels, and supergroups. See [COMPATIBILITY.md](COMPATIBILITY.md) before using a Telegram library or connector unchanged.
+Notable unsupported Telegram Bot API features include inline keyboards and callback queries, channels, and supergroups. See [COMPATIBILITY.md](COMPATIBILITY.md) before using a Telegram library or connector unchanged.

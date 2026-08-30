@@ -1,4 +1,4 @@
-# Connect an AI agent to Imgram
+# Connect an AI agent to imGram
 
 This page is the canonical starting point for humans and AI coding agents.
 
@@ -8,7 +8,7 @@ You need two values:
 
 ```text
 API root: https://bot.premsir.com
-Bot token: supplied by the Imgram user
+Bot token: supplied by the imGram user
 ```
 
 Construct method URLs as:
@@ -17,22 +17,22 @@ Construct method URLs as:
 <API root>/bot<token>/<method>
 ```
 
-The API root must not include `/bot<TOKEN>`. Never send an Imgram token to Telegram or any unrelated host.
+The API root must not include `/bot<TOKEN>`. Never send an imGram token to Telegram or any unrelated host.
 
 ## Instructions for an AI agent
 
-When a user asks you to connect their Imgram bot:
+When a user asks you to connect their imGram bot:
 
 1. Treat the token as a secret. Do not quote it back, commit it, print it in logs, or put it in a public command example.
 2. Read [COMPATIBILITY.md](COMPATIBILITY.md) before choosing a Telegram SDK or an existing connector.
 3. If you are adding or modifying a framework adapter, read and implement [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). Typing refresh, streamed message editing, cleanup, retries, and media routing belong in adapter code rather than the model prompt.
-4. Verify credentials with `getMe` against the Imgram API root.
-5. Prefer raw HTTP for v1 unless the selected connector supports both a custom API root and the methods Imgram implements.
+4. Verify credentials with `getMe` against the imGram API root.
+5. Prefer raw HTTP for v1 unless the selected connector supports both a custom API root and the methods imGram implements.
 6. Choose exactly one update transport: `getUpdates` or webhook.
 7. Persist the last successfully processed `update_id`; acknowledge it by using `offset=update_id+1` on the next poll.
 8. Make handlers idempotent because an update can be delivered more than once around failures.
 
-Do not silently fall back to `api.telegram.org`. A failure against Imgram should remain visible to the user.
+Do not silently fall back to `api.telegram.org`. A failure against imGram should remain visible to the user.
 
 ## Minimal polling loop
 
@@ -59,7 +59,7 @@ def call(method, params=None):
     with urllib.request.urlopen(request, timeout=35) as response:
         payload = json.load(response)
     if not payload.get("ok"):
-        raise RuntimeError(payload.get("description", "Imgram API error"))
+        raise RuntimeError(payload.get("description", "imGram API error"))
     return payload["result"]
 
 print(call("getMe"))
@@ -78,14 +78,14 @@ while True:
 
 For production, persist `offset` outside process memory, add exponential backoff, handle HTTP errors, and shut down cleanly.
 
-`sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML. When a framework omits `parse_mode`, Imgram also recognizes a conservative CommonMark subset so ordinary Agent output such as `**bold**` and inline code does not leak formatting markers.
+`sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML. When a framework omits `parse_mode`, imGram also recognizes a conservative CommonMark subset so ordinary Agent output such as `**bold**` and inline code does not leak formatting markers.
 
-For a slow response, the adapter should call `sendChatAction` with `action=typing` immediately and refresh it every four seconds until the answer is finalized. It should coalesce text deltas into one message using `editMessageText`, not ask the model to make those calls. Use `setMessageReaction` for lightweight acknowledgement before or after a response; Imgram accepts one standard emoji and an empty array clears it. Send generated photos or files with Telegram-compatible multipart `sendPhoto` and `sendDocument` requests. Uploads are limited to 50 MiB; URL and reusable `file_id` inputs are not part of v1 yet.
+For a slow response, the adapter should call `sendChatAction` with `action=typing` immediately and refresh it every four seconds until the answer is finalized. It should coalesce text deltas into one message using `editMessageText`, not ask the model to make those calls. Use `setMessageReaction` for lightweight acknowledgement before or after a response; imGram accepts one standard emoji and an empty array clears it. Send generated photos or files with Telegram-compatible multipart `sendPhoto` and `sendDocument` requests. Download user-sent media by calling `getFile(file_id)` and fetching the returned authenticated path, then pass the bytes to the Agent's real attachment or multimodal input. Uploads are limited to 50 MiB; URL and reusable `file_id` upload inputs are not part of v1 yet.
 
 ## Existing agent frameworks
 
-- [OpenClaw](integrations/openclaw.md): closest path because it exposes a custom Telegram API root, but currently experimental with Imgram.
-- [CC Connect](integrations/cc-connect.md): requires a dedicated Imgram adapter or an upstream endpoint option.
+- [OpenClaw](integrations/openclaw.md): closest path because it exposes a custom Telegram API root, but currently experimental with imGram.
+- [CC Connect](integrations/cc-connect.md): requires a dedicated imGram adapter or an upstream endpoint option.
 - [Hermes Agent](integrations/hermes.md): requires a custom endpoint option or adapter.
 
 These short guides document connector-specific facts. The Bot API reference remains the source of truth; a separate guide is not needed for every agent framework that can make ordinary HTTP requests.
