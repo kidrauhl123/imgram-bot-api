@@ -11,6 +11,7 @@ from nanobot.channels.imgram.runtime import (
     _checklist_tasks_done_payload,
 )
 from nanobot.channels.telegram.runtime import TelegramChannel
+from nanobot.runtime_context import append_runtime_context, runtime_context_blocks_from_metadata
 
 
 def test_imgram_inherits_official_telegram_runtime():
@@ -116,3 +117,48 @@ def test_checklist_status_event_is_published_to_agent_bus():
     assert inbound.sender_id == "42|laoba"
     assert "Marked completed: [1] 整理桌面" in inbound.content
     assert inbound.metadata["checklist_tasks_done"]["marked_as_done_task_ids"] == [1]
+
+
+def test_group_sender_name_reaches_agent_model_context():
+    class Bus:
+        def __init__(self):
+            self.inbound = []
+
+        async def publish_inbound(self, message):
+            self.inbound.append(message)
+
+    user = SimpleNamespace(
+        id=136907714,
+        first_name="老八",
+        last_name="",
+        username="",
+    )
+    message = SimpleNamespace(
+        message_id=20,
+        message_thread_id=None,
+        media_group_id=None,
+        chat_id=-120031,
+        chat=SimpleNamespace(type="group", is_forum=False),
+        text="我给你发消息的名字是啥",
+        caption=None,
+        location=None,
+        reply_to_message=None,
+    )
+    update = SimpleNamespace(message=message, effective_user=user)
+    bus = Bus()
+    channel = ImgramChannel(
+        ImgramConfig(token="test", allow_from=["*"], group_policy="open", react_emoji=""),
+        bus,
+    )
+
+    asyncio.run(channel._process_message_update(update, None))
+
+    assert len(bus.inbound) == 1
+    inbound = bus.inbound[0]
+    blocks = runtime_context_blocks_from_metadata(inbound.metadata)
+    model_content, _ = append_runtime_context(inbound.content, blocks)
+    assert inbound.content == "我给你发消息的名字是啥"
+    assert inbound.metadata["display_name"] == "老八"
+    assert "老八" in model_content
+    assert "136907714" in model_content
+    assert "authenticated imGram group sender" in model_content

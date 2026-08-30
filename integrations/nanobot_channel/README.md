@@ -17,6 +17,12 @@ messages. It forwards the actor, changed task IDs and titles, and the complete
 resulting checklist state into the Agent session as both readable context and
 structured inbound metadata.
 
+For group messages, the overlay projects the authenticated sender's display
+name, user ID, optional username, and first/last names into nanobot's trusted
+model-only runtime context. The visible chat text is left unchanged, while the
+Agent can reliably distinguish and address group participants even when an
+imGram account has no public username.
+
 Run the regression test from an environment containing nanobot and pytest:
 
 ```bash
