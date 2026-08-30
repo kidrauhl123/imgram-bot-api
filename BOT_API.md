@@ -119,6 +119,7 @@ An update contains either `message` for a new incoming message or `edited_messag
 | `sendPhoto` | `chat_id`, multipart `photo` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
 | `sendDocument` | `chat_id`, multipart `document` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
 | `sendChatAction` | `chat_id`, `action` | — | `true` |
+| `setMessageReaction` | `chat_id`, `message_id` | `reaction`, `is_big` | `true` |
 | `sendChecklist` | `chat_id`, `checklist` | `reply_to_message_id` | Message |
 | `editMessageText` | `chat_id`, `message_id`, `text` | `parse_mode`, `entities` | Message |
 | `deleteMessage` | `message_id` | — | `true` |
@@ -193,6 +194,22 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendChatAction" \
 ```
 
 Supported actions are `typing`, `upload_photo`, `record_video`, `upload_video`, `record_voice`, `upload_voice`, `upload_document`, `choose_sticker`, `find_location`, `record_video_note`, and `upload_video_note`.
+
+### setMessageReaction
+
+Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. Imgram v1 accepts one of `👍 ❤ 🔥 🎉 👏 🤣 😮 😢 🤔 👀 🙏 💯`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "chat_id": 123456,
+    "message_id": 42,
+    "reaction": [{"type": "emoji", "emoji": "👀"}]
+  }'
+```
+
+Custom emoji and multiple simultaneous reactions are not supported in v1. `is_big` is accepted, but self-hosted clients currently render a static local emoji instead of Telegram's cloud-hosted reaction animation.
 
 ### sendChecklist
 

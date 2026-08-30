@@ -77,6 +77,19 @@
         }
       }
     },
+    "/bot{token}/setMessageReaction": {
+      "parameters": [{"$ref": "#/components/parameters/BotToken"}],
+      "post": {
+        "operationId": "setMessageReaction",
+        "summary": "Add, replace, or clear the bot's reaction on a message",
+        "requestBody": {"$ref": "#/components/requestBodies/SetMessageReaction"},
+        "responses": {
+          "200": {"$ref": "#/components/responses/Success"},
+          "400": {"$ref": "#/components/responses/Error"},
+          "401": {"$ref": "#/components/responses/Error"}
+        }
+      }
+    },
     "/bot{token}/sendChecklist": {
       "parameters": [{"$ref": "#/components/parameters/BotToken"}],
       "post": {
@@ -257,6 +270,13 @@
         "content": {
           "application/json": {"schema": {"$ref": "#/components/schemas/SendChatActionRequest"}},
           "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SendChatActionRequest"}}
+        }
+      },
+      "SetMessageReaction": {
+        "required": true,
+        "content": {
+          "application/json": {"schema": {"$ref": "#/components/schemas/SetMessageReactionRequest"}},
+          "application/x-www-form-urlencoded": {"schema": {"$ref": "#/components/schemas/SetMessageReactionRequest"}}
         }
       },
       "SendChecklist": {
@@ -513,6 +533,30 @@
             "type": "string",
             "enum": ["typing", "upload_photo", "record_video", "upload_video", "record_voice", "upload_voice", "upload_document", "choose_sticker", "find_location", "record_video_note", "upload_video_note"]
           }
+        }
+      },
+      "ReactionTypeEmoji": {
+        "type": "object",
+        "required": ["type", "emoji"],
+        "properties": {
+          "type": {"type": "string", "const": "emoji"},
+          "emoji": {"type": "string", "enum": ["👍", "❤", "❤️", "🔥", "🎉", "👏", "🤣", "😮", "😢", "🤔", "👀", "🙏", "💯"]}
+        }
+      },
+      "SetMessageReactionRequest": {
+        "type": "object",
+        "required": ["chat_id", "message_id"],
+        "properties": {
+          "chat_id": {"type": "integer", "format": "int64"},
+          "message_id": {"type": "integer", "format": "int32", "minimum": 1},
+          "reaction": {
+            "description": "Zero or one standard emoji reaction. In form requests, pass this array as a JSON-encoded string.",
+            "oneOf": [
+              {"type": "array", "maxItems": 1, "items": {"$ref": "#/components/schemas/ReactionTypeEmoji"}},
+              {"type": "string"}
+            ]
+          },
+          "is_big": {"type": "boolean", "default": false}
         }
       },
       "SendChecklistRequest": {
