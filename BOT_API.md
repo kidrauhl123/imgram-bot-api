@@ -4,6 +4,10 @@ Updated: 2026-08-30
 
 The Imgram Bot API is an experimental, Telegram-style compatible subset for Imgram bots. Only the methods and fields documented here are supported.
 
+Framework authors should also read [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). It
+defines how supported methods should be composed into typing, streaming,
+formatting, upload, and cleanup behavior for an Agent chat adapter.
+
 ## Making requests
 
 The production endpoint is:
@@ -185,7 +189,7 @@ Use `photo=@image.png` with `sendPhoto`. Captions accept `parse_mode` or `captio
 
 ### sendChatAction
 
-Publishes a transient Telegram-style status in the chat. For example, call `typing` before an Agent starts a slow response and refresh it periodically while generation continues.
+Publishes a transient Telegram-style status in the chat. An Agent adapter should call `typing` before starting a slow response and refresh it every four seconds while generation continues. Cancel the refresh task when the response is finalized, cancelled, or fails.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendChatAction" \
@@ -239,7 +243,7 @@ The checklist fields may also be supplied at the top level, but the nested `chec
 
 ### editMessageText
 
-Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents.
+Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents. For streamed Agent output, send the first non-empty preview once, retain its `message_id`, coalesce later deltas, and edit no more often than the adapter interval described in [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md).
 
 ### deleteMessage
 

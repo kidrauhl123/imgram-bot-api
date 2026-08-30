@@ -27,4 +27,8 @@ Before using this in production:
 3. Verify `getMe`, incoming text through `getUpdates`, and `sendMessage` in a test bot.
 4. Never allow fallback to `api.telegram.org`.
 
+If a dedicated Imgram channel is added, implement the lifecycle in
+[ADAPTER_GUIDE.md](../ADAPTER_GUIDE.md) in channel code rather than relying on
+an Agent prompt to remember typing, streaming edits, or cleanup.
+
 OpenClaw reference: [Telegram channel documentation](https://github.com/openclaw/openclaw/blob/main/docs/channels/telegram.md).

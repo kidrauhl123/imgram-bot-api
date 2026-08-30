@@ -5,6 +5,10 @@
     "version": "1.0.0-experimental",
     "description": "Telegram-style compatible subset for Imgram. Imgram tokens are independent from Telegram tokens and must not be sent to api.telegram.org."
   },
+  "externalDocs": {
+    "description": "Imgram adapter implementation and UX contract",
+    "url": "https://github.com/kidrauhl123/imgram-bot-api/blob/main/ADAPTER_GUIDE.md"
+  },
   "servers": [
     {
       "url": "https://bot.premsir.com",

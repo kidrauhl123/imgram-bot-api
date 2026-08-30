@@ -16,6 +16,10 @@ Add a first-class `imgram` platform to CC Connect that:
 - degrades unsupported bot-side downloads, commands, and buttons explicitly;
 - exposes Imgram checklists as a native capability instead of flattening them to text.
 
+Its channel runtime should implement the deterministic typing, streaming,
+cleanup, retry, and media rules in [ADAPTER_GUIDE.md](../ADAPTER_GUIDE.md),
+instead of adding those instructions to the connected Agent's prompt.
+
 A future configuration could look like this; it is a design target, not valid upstream configuration today:
 
 ```toml

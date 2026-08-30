@@ -25,15 +25,20 @@ When a user asks you to connect their Imgram bot:
 
 1. Treat the token as a secret. Do not quote it back, commit it, print it in logs, or put it in a public command example.
 2. Read [COMPATIBILITY.md](COMPATIBILITY.md) before choosing a Telegram SDK or an existing connector.
-3. Verify credentials with `getMe` against the Imgram API root.
-4. Prefer raw HTTP for v1 unless the selected connector supports both a custom API root and the methods Imgram implements.
-5. Choose exactly one update transport: `getUpdates` or webhook.
-6. Persist the last successfully processed `update_id`; acknowledge it by using `offset=update_id+1` on the next poll.
-7. Make handlers idempotent because an update can be delivered more than once around failures.
+3. If you are adding or modifying a framework adapter, read and implement [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). Typing refresh, streamed message editing, cleanup, retries, and media routing belong in adapter code rather than the model prompt.
+4. Verify credentials with `getMe` against the Imgram API root.
+5. Prefer raw HTTP for v1 unless the selected connector supports both a custom API root and the methods Imgram implements.
+6. Choose exactly one update transport: `getUpdates` or webhook.
+7. Persist the last successfully processed `update_id`; acknowledge it by using `offset=update_id+1` on the next poll.
+8. Make handlers idempotent because an update can be delivered more than once around failures.
 
 Do not silently fall back to `api.telegram.org`. A failure against Imgram should remain visible to the user.
 
 ## Minimal polling loop
+
+This example proves connectivity and update delivery. It is not a complete
+user-experience adapter. Production adapters should additionally implement the
+deterministic lifecycle in [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md).
 
 The following Python example uses only the standard library:
 
@@ -75,7 +80,7 @@ For production, persist `offset` outside process memory, add exponential backoff
 
 `sendMessage` and `editMessageText` accept `parse_mode` (`HTML`, `MarkdownV2`, or `Markdown`) or explicit Telegram-style `entities`. Incoming messages expose their `entities` as well. Prefer HTML for simple Agent output and escape untrusted text before inserting it into HTML. When a framework omits `parse_mode`, Imgram also recognizes a conservative CommonMark subset so ordinary Agent output such as `**bold**` and inline code does not leak formatting markers.
 
-For a slow response, call `sendChatAction` with `action=typing` immediately and refresh it periodically until the answer is sent. Use `setMessageReaction` for lightweight acknowledgement before or after a response; Imgram accepts one standard emoji and an empty array clears it. Send generated photos or files with Telegram-compatible multipart `sendPhoto` and `sendDocument` requests. Uploads are limited to 50 MiB; URL and reusable `file_id` inputs are not part of v1 yet.
+For a slow response, the adapter should call `sendChatAction` with `action=typing` immediately and refresh it every four seconds until the answer is finalized. It should coalesce text deltas into one message using `editMessageText`, not ask the model to make those calls. Use `setMessageReaction` for lightweight acknowledgement before or after a response; Imgram accepts one standard emoji and an empty array clears it. Send generated photos or files with Telegram-compatible multipart `sendPhoto` and `sendDocument` requests. Uploads are limited to 50 MiB; URL and reusable `file_id` inputs are not part of v1 yet.
 
 ## Existing agent frameworks
 

@@ -6,17 +6,20 @@ Canonical API root: https://bot.premsir.com
 Method URL: https://bot.premsir.com/bot<TOKEN>/<METHOD>
 
 Start here: https://github.com/kidrauhl123/imgram-bot-api/blob/main/CONNECT.md
+Adapter UX contract: https://github.com/kidrauhl123/imgram-bot-api/blob/main/ADAPTER_GUIDE.md
 API reference: https://github.com/kidrauhl123/imgram-bot-api/blob/main/BOT_API.md
 Compatibility: https://github.com/kidrauhl123/imgram-bot-api/blob/main/COMPATIBILITY.md
 OpenAPI: https://raw.githubusercontent.com/kidrauhl123/imgram-bot-api/main/openapi.json
 
 Supported methods:
-getMe, sendMessage, sendPhoto, sendDocument, sendChatAction, sendChecklist, editMessageText, deleteMessage,
+getMe, sendMessage, sendPhoto, sendDocument, sendChatAction, setMessageReaction, sendChecklist, editMessageText, deleteMessage,
 pinChatMessage, unpinChatMessage, toggleChecklist, appendChecklist,
 getUpdates, setWebhook, deleteWebhook, getWebhookInfo.
 
 sendMessage and editMessageText support parse_mode=HTML, MarkdownV2, or Markdown, and explicit Telegram-style entities. Without parse_mode/entities, a conservative Agent CommonMark subset is auto-detected. Bare @usernames are recognized automatically. Incoming Message objects include entities.
 
 sendPhoto and sendDocument accept Telegram-style multipart uploads up to 50 MiB. sendChatAction supports typing and Telegram upload/record action names.
+
+When implementing an Imgram adapter, put deterministic UX behavior in adapter code, not the model prompt: refresh typing every 4 seconds, coalesce streamed deltas into one message with editMessageText (recommended 800 ms edit interval), force a formatted final edit, and always stop typing/clean temporary reactions in a finally block. Keep token and API root configurable; only the behavior policy is fixed.
 
 Only documented methods and fields are supported. Prefer raw HTTP for v1. OpenClaw is experimental; stock CC Connect and Hermes integrations require adapters.

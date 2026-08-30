@@ -54,3 +54,8 @@ Imgram v1 deliberately implements a useful Telegram-style subset. A matching met
 | Hermes Agent Telegram gateway | No | Its public configuration documents a Telegram token but no custom Bot API root. An endpoint option or Imgram adapter is required. |
 
 Compatibility is based on the currently published integrations, not on their project names. Recheck this table when either side changes.
+
+When implementing one of these connectors, method compatibility is only half
+of the work. Follow [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md) to keep typing,
+one-message streaming, final formatting, media routing, and cleanup in the
+adapter rather than relying on the language model.

@@ -17,6 +17,10 @@ A minimal Imgram gateway for Hermes should:
 5. store the polling offset and enforce an Imgram user allowlist;
 6. expose checklist operations only when the Hermes tool layer requests them.
 
+The gateway should also implement [Imgram's adapter UX contract](../ADAPTER_GUIDE.md)
+in code, including typing refresh, coalesced streamed edits, final cleanup, and
+supported media routing.
+
 The proposed environment-variable names above describe an Imgram adapter; they are not upstream Hermes variables today.
 
 Hermes reference: [environment variables](https://github.com/NousResearch/hermes-agent/blob/main/website/docs/reference/environment-variables.md).
