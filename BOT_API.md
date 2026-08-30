@@ -78,6 +78,15 @@ The HTTP status code matches `error_code` for public API errors. Common codes ar
 | `caption_entities` | MessageEntity[] | Optional structured formatting for `caption`. |
 | `photo` | PhotoSize[] | Present on photo messages. |
 | `document` | Document | Present on document messages. |
+| `video` | Video | Present on ordinary video messages. |
+| `video_note` | VideoNote | Present on round-video messages. |
+| `animation` | Animation | Present on animation messages. |
+| `voice` | Voice | Present on voice messages. |
+| `audio` | Audio | Present on music/audio messages. |
+| `location` | Location | Present on location messages. |
+| `reply_to_message` | Message | One-level context for a replied-to message. |
+| `media_group_id` | String | Shared by messages in the same album. |
+| `article` | Object | Present on an imGram native rich article. |
 | `checklist` | Checklist | Present on checklist messages. |
 
 ### MessageEntity
@@ -119,12 +128,16 @@ An update contains either `message` for a new incoming message or `edited_messag
 | Method | Required parameters | Optional parameters | Returns |
 |---|---|---|---|
 | `getMe` | — | — | User |
-| `sendMessage` | `chat_id`, `text` | `parse_mode`, `entities`, `reply_to_message_id` | Message |
-| `sendPhoto` | `chat_id`, multipart `photo` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
-| `sendDocument` | `chat_id`, multipart `document` | `caption`, `parse_mode`, `caption_entities`, `reply_to_message_id` | Message |
+| `sendMessage` | `chat_id`, `text` | `parse_mode`, `entities`, `reply_parameters`, legacy `reply_to_message_id` | Message |
+| `sendPhoto` | `chat_id`, multipart `photo` | `caption`, `parse_mode`, `caption_entities`, replies | Message |
+| `sendDocument` | `chat_id`, multipart `document` | `caption`, `parse_mode`, `caption_entities`, replies | Message |
+| `sendVideo` | `chat_id`, multipart `video` | caption fields, replies, `duration`, `width`, `height`, `supports_streaming` | Message |
+| `sendVoice` | `chat_id`, multipart `voice` | caption fields, replies, `duration` | Message |
+| `sendAudio` | `chat_id`, multipart `audio` | caption fields, replies, `duration`, `title`, `performer` | Message |
 | `sendChatAction` | `chat_id`, `action` | — | `true` |
 | `setMessageReaction` | `chat_id`, `message_id` | `reaction`, `is_big` | `true` |
 | `sendChecklist` | `chat_id`, `checklist` | `reply_to_message_id` | Message |
+| `sendRichMessage` / `sendArticle` | `chat_id`, `rich_message.markdown` | replies, `rich_message.rtl` | Message |
 | `editMessageText` | `chat_id`, `message_id`, `text` | `parse_mode`, `entities` | Message |
 | `deleteMessage` | `message_id` | — | `true` |
 | `pinChatMessage` | `chat_id`, `message_id` | — | `true` |
@@ -177,9 +190,12 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendMessage" \
   --data-urlencode 'text=Received'
 ```
 
-### sendPhoto and sendDocument
+### sendPhoto, sendDocument, sendVideo, sendVoice, and sendAudio
 
-Upload a photo or ordinary file using the same multipart field names as Telegram. Multipart uploads and `attach://<field>` references are supported; remote HTTP URLs and previously returned `file_id` values are not yet accepted as upload input. Files are limited to 50 MiB.
+Upload media using the same multipart field names as Telegram. Multipart
+uploads and `attach://<field>` references are supported; remote HTTP URLs and
+previously returned `file_id` values are not yet accepted as upload input.
+Files are limited to 50 MiB.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendDocument" \
@@ -189,7 +205,14 @@ curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendDocument" \
   -F 'parse_mode=HTML'
 ```
 
-Use `photo=@image.png` with `sendPhoto`. Captions accept `parse_mode` or `caption_entities` and use the same formatting behavior as `sendMessage`.
+Use `photo=@image.png`, `video=@clip.mp4`, `voice=@note.ogg`, or
+`audio=@track.mp3` with its matching method. Captions accept `parse_mode` or
+`caption_entities` and use the same formatting behavior as `sendMessage`.
+Video duration/dimensions and audio metadata are optional, Telegram-compatible
+multipart fields.
+
+Modern Telegram `reply_parameters` objects are accepted on send methods. The
+legacy `reply_to_message_id` parameter remains supported.
 
 ### sendChatAction
 
@@ -249,6 +272,28 @@ The title must not be empty. A checklist must contain 1–30 non-empty tasks. Po
 
 The checklist fields may also be supplied at the top level, but the nested `checklist` object is preferred.
 
+### sendRichMessage and sendArticle
+
+Sends an imGram native article rather than an ordinary chat-text bubble.
+`sendArticle` is an imGram alias; `sendRichMessage` matches the method used by
+nanobot's official Telegram runtime.
+
+```bash
+curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/sendRichMessage" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "chat_id": 123456,
+    "rich_message": {
+      "markdown": "# Trip plan\n\nA native imGram article.\n\n> Remember passports"
+    }
+  }'
+```
+
+Headings, paragraphs, fenced code blocks, quotations, and dividers are stored
+as native Teamgram RichMessage blocks. Use this method only when an article is
+intended; ordinary Agent replies should keep using `sendMessage` and streamed
+`editMessageText`.
+
 ### editMessageText
 
 Edits a text message using `chat_id`, `message_id`, and a non-empty `text`. It accepts the same `parse_mode` or `entities` formatting parameters as `sendMessage`. This method does not edit checklist contents. For streamed Agent output, send the first non-empty preview once, retain its `message_id`, coalesce later deltas, and edit no more often than the adapter interval described in [ADAPTER_GUIDE.md](ADAPTER_GUIDE.md). Bot-authored edits render without an “edited” marker, matching Telegram's streaming-response experience; human-authored message edits still show the marker.
@@ -271,7 +316,10 @@ An adapter must treat the operation as completed only when the HTTP request succ
 
 ### getFile and downloading incoming media
 
-Incoming photos contain a Telegram-style `photo` size array; documents contain a `document` object. Read the desired object's `file_id`, call `getFile`, and then download the returned `file_path` from the authenticated file endpoint.
+Incoming photos contain a Telegram-style `photo` size array. Videos, video
+notes, animations, voices, audio tracks, and documents contain the matching
+Telegram-style object. Read its `file_id`, call `getFile`, and then download the
+returned `file_path` from the authenticated file endpoint.
 
 ```bash
 file_path="$({

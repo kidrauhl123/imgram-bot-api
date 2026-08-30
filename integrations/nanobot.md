@@ -1,98 +1,80 @@
 # nanobot
 
-Status: **the Telegram channel is a strong base, but it needs a small first-class
-imGram adapter**.
+imGram ships a first-class nanobot channel overlay based on the official
+nanobot v0.3.0 Telegram runtime. It does not reimplement the chat lifecycle.
+`ImgramChannel` subclasses `TelegramChannel`, so command registration, ordered
+ingress, group mentions, reply context, albums, media download, typing refresh,
+temporary reactions, streaming edits, formatting, chunking, retries, polling,
+and webhooks continue to use nanobot's official code.
 
-The current nanobot Telegram runtime already implements most of the experience
-imGram wants: a four-second typing loop, one-message streaming with
-`editMessageText`, final HTML rendering, automatic command registration,
-incoming media download, and temporary reactions. Its current configuration
-does not expose a custom Bot API root, so pasting an imGram token into the stock
-Telegram channel would still send it to Telegram.
+The maintained source is in
+[`nanobot_channel/`](nanobot_channel/). The only transport differences are:
 
-## Apply the ready transport patch
+- channel/session identity is `imgram` / `imgram:<chat_id>`;
+- API calls use `apiRoot`, defaulting to `https://bot.premsir.com`;
+- files use the matching `<apiRoot>/file/bot` endpoint;
+- downloaded media is isolated in nanobot's `imgram` media directory;
+- the API root validator refuses Telegram hosts, so an imGram token cannot be
+  leaked through an accidental fallback.
 
-Use the stock Telegram channel and apply
-[`nanobot-imgram.patch`](nanobot-imgram.patch) to the nanobot checkout. Do not
-replace its runtime with a minimal hand-written channel: doing so drops the
-command registration and media-download behavior that make the official
-channel useful.
+## Configuration
 
-Existing installations that already use the earlier dedicated `imgram`
-channel can apply
-[`nanobot-imgram-runtime-fixes.patch`](nanobot-imgram-runtime-fixes.patch).
-That repair registers the real nanobot command list at startup, downloads
-incoming photo/document bytes into nanobot's media directory, and forwards the
-path through `InboundMessage.media` instead of sending attachment metadata only.
-
-```bash
-git -C /path/to/nanobot apply /path/to/imgram-bot-api/integrations/nanobot-imgram.patch
-```
-
-Then add `apiRoot` to nanobot's existing Telegram channel configuration:
+Install the overlay into the same environment as nanobot, then configure a
+dedicated `imgram` channel:
 
 ```json
 {
   "channels": {
-    "telegram": {
+    "imgram": {
       "enabled": true,
       "token": "YOUR_IMGRAM_BOT_TOKEN",
-      "apiRoot": "https://bot.premsir.com"
+      "apiRoot": "https://bot.premsir.com",
+      "streaming": true,
+      "groupPolicy": "mention",
+      "replyToMessage": false,
+      "inlineKeyboards": false,
+      "richMessages": false
     }
   }
 }
 ```
 
-Restart the nanobot gateway after changing the runtime or configuration. On
-startup, the unchanged official runtime calls `setMyCommands`; for incoming
-photos it calls `getFile`, downloads the bytes through `base_file_url`, and
-passes the local media path to the Agent.
+Do not put an imGram token in nanobot's ordinary `telegram` channel. Restart
+the nanobot gateway after installation or configuration changes. Startup calls
+`getMe` and `setMyCommands`; the latter powers imGram's command-menu button and
+`/` autocomplete.
 
-## What the patch changes
+## Native imGram actions
 
-The patch adds an `api_root` setting to the existing Telegram channel and
-configures both URLs used by `python-telegram-bot`:
+The overlay also installs the typed `imgram_action` Agent tool. The tool uses
+the current request's real `chat_id` and `message_id`, calls the Bot API, and
+returns success only after an `ok=true` response. Supported actions are:
 
-```python
-api_root = self.config.api_root.rstrip("/")
-builder = (
-    Application.builder()
-    .token(self.config.token)
-    .base_url(f"{api_root}/bot")
-    .base_file_url(f"{api_root}/file/bot")
-    .request(api_request)
-    .get_updates_request(poll_request)
-)
-```
+- pin, unpin, react, edit, and delete;
+- send, toggle, and append a native checklist;
+- send a native imGram article from Markdown.
 
-For production imGram, `api_root` is `https://bot.premsir.com`. The library
-appends the token to both configured prefixes; do not include the token in the
-setting itself.
+This is deliberately separate from the transport's ordinary response path.
+The model decides whether the requested action is appropriate; deterministic
+typing, streaming, media transfer, and cleanup remain official adapter code.
 
-Keep nanobot's existing deterministic behavior:
+`richMessages` stays disabled by default because enabling it makes every normal
+nanobot answer a native article. Use `imgram_action(action="send_article", ...)`
+when the user explicitly requests an article.
 
-- register `BOT_COMMANDS` with `setMyCommands` during startup;
-- download incoming photos/documents through `getFile` and the configured file
-  base URL before forwarding their bytes/path to the Agent;
-- refresh `sendChatAction(typing)` every four seconds;
-- use the existing coalesced `editMessageText` streaming buffer;
-- use the default `👀` acknowledgement reaction and clear it in final cleanup.
+## Media behavior
 
-Keep `inline_keyboards` and `rich_messages` disabled until the corresponding
-imGram methods are listed as supported. Route generated photos and ordinary
-files through `sendPhoto` and `sendDocument`; do not silently call unsupported
-video, voice, or audio methods.
+The inherited official runtime sends local output through `sendPhoto`,
+`sendVideo`, `sendVoice`, `sendAudio`, or `sendDocument` according to file type.
+Incoming photo, video, video note, animation, voice, audio, and document updates
+are downloaded through `getFile` and forwarded to nanobot as actual local media
+paths. Voice and audio continue through nanobot's official transcription path.
 
-## Pinning is a separate Agent capability
+## Version contract
 
-nanobot's streaming channel behavior does not by itself give the model a real
-pin tool. Add a typed `pin_message(chat_id, message_id)` operation that calls
-`pinChatMessage` and returns success only after receiving
-`{"ok":true,"result":true}`. Apply the same rule to unpinning. Do not teach the
-model to claim success through prompt text.
+The overlay is pinned to nanobot v0.3.0 because it inherits private helper
+methods from that exact runtime. Its regression test asserts that `send`,
+`send_delta`, and `_process_message_update` are still inherited rather than
+forked. Re-audit those seams before supporting a later nanobot release.
 
-After the transport patch, run the complete checklist in
-[ADAPTER_GUIDE.md](../ADAPTER_GUIDE.md), especially command-menu visibility,
-image bytes reaching multimodal input, and a response-level pin test.
-
-References: [nanobot Telegram runtime](https://github.com/HKUDS/nanobot/blob/main/nanobot/channels/telegram/runtime.py), [nanobot Telegram guide](https://github.com/HKUDS/nanobot/blob/main/docs/guides/telegram-ai-agent.md), and [`python-telegram-bot` custom base URLs](https://docs.python-telegram-bot.org/en/v22.6/telegram.ext.applicationbuilder.html#telegram.ext.ApplicationBuilder.base_url).
+References: [nanobot v0.3.0 Telegram runtime](https://github.com/HKUDS/nanobot/blob/v0.3.0/nanobot/channels/telegram/runtime.py), [nanobot Telegram guide](https://github.com/HKUDS/nanobot/blob/v0.3.0/docs/guides/telegram-ai-agent.md), and [`python-telegram-bot` custom base URLs](https://docs.python-telegram-bot.org/en/v22.6/telegram.ext.applicationbuilder.html#telegram.ext.ApplicationBuilder.base_url).

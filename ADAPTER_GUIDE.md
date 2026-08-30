@@ -34,11 +34,13 @@ human-authored edits remain visibly marked.
 Expose explicit structured operations to the Agent core when the framework
 supports tools or typed outbound events:
 
-- `send_text`, `send_photo`, and `send_document`;
+- `send_text`, `send_photo`, `send_video`, `send_voice`, `send_audio`, and
+  `send_document`;
 - `edit_message` and `delete_message`;
 - `pin_message` and `unpin_message`;
 - `set_reaction` and `clear_reaction`;
-- `send_checklist`, `toggle_checklist`, and `append_checklist`.
+- `send_checklist`, `toggle_checklist`, and `append_checklist`;
+- `send_article` for an explicitly requested native article.
 
 Avoid magic strings in model output such as `PIN_MESSAGE:42`. Translate typed
 operations into Bot API calls inside the adapter.
@@ -174,12 +176,13 @@ single user-facing answer stream.
 
 ## Media behavior
 
-imGram v1 exposes Telegram-style `sendPhoto`, `sendDocument`, and `getFile`.
+imGram v1 exposes Telegram-style `sendPhoto`, `sendDocument`, `sendVideo`,
+`sendVoice`, `sendAudio`, and `getFile`.
 
 The adapter SHOULD:
 
-- choose `sendPhoto` for supported image output and `sendDocument` for every
-  other generated file;
+- preserve the host framework's established Telegram media routing: photo,
+  video, voice, audio, and ordinary document;
 - upload with `multipart/form-data` and keep each file below 50 MiB;
 - use `upload_photo` or `upload_document` chat actions while preparing a slow
   upload;
@@ -194,10 +197,9 @@ The adapter SHOULD:
 - download incoming documents the same way and expose them through the host
   framework's safe attachment/workspace mechanism.
 
-Do not pass remote URLs or Telegram `file_id` values to imGram v1. Do not call
-`sendVideo`, `sendVoice`, or `sendAudio`; they are not implemented. A `file_id`
-from an incoming update is valid as input to `getFile`, but is not yet valid as
-the upload argument to `sendPhoto` or `sendDocument`.
+Do not pass remote URLs or Telegram `file_id` values as upload input in imGram
+v1. A `file_id` from an incoming update is valid for `getFile`; outbound media
+currently uses multipart upload.
 
 ## Reactions, edits, pins, and checklists
 
@@ -250,10 +252,9 @@ and make these changes explicitly:
 1. Add an imGram-specific configuration type with a configurable API root.
 2. Prove through a request test that an imGram token is never sent to any other
    host.
-3. Keep Telegram-style command registration, but disable unsupported startup
-   calls, inline keyboards, callback queries, channels, and supergroups.
-4. Map outbound video/audio/voice artifacts to `sendDocument`, or expose a
-   clear unsupported result.
+3. Keep Telegram-style command registration, but disable unsupported inline
+   keyboards, callback queries, channels, and supergroups.
+4. Keep the existing Telegram photo/video/voice/audio/document routing.
 5. Implement the response lifecycle above in channel code.
 6. Expose supported message operations as typed capabilities to the Agent.
 7. Keep unsupported capabilities visible in logs and user-facing errors.
@@ -279,6 +280,7 @@ The adapter is not complete until a user can verify all applicable items:
 - [ ] Cancelling or failing a turn stops typing and cleans temporary reaction
       state.
 - [ ] Photo and document uploads render in the imGram client.
+- [ ] Video, voice, and audio uploads render and retain their media type.
 - [ ] A user-sent photo is downloaded through `getFile` and reaches the
       Agent's image input as bytes, not merely as metadata.
 - [ ] Reaction add/clear, message edit, pin, and unpin work through structured
