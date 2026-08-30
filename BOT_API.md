@@ -205,7 +205,11 @@ Supported actions are `typing`, `upload_photo`, `record_video`, `upload_video`, 
 
 ### setMessageReaction
 
-Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. imGram v1 accepts one of `👍 👎 ❤ 🔥 😁 🤔 👏 🤯 😱 😭 🤩 🤮 👌 🥴 🥱 🤡 🐳 🎉 🥰 🤣`. Both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
+Adds or replaces the bot's reaction using Telegram's `ReactionTypeEmoji` JSON shape. imGram accepts Telegram's complete 73-emoji standard reaction catalog:
+
+`❤ 👍 👎 🔥 🥰 👏 😁 🤔 🤯 😱 🤬 😢 🎉 🤩 🤮 💩 🙏 👌 🕊 🤡 🥱 🥴 😍 🐳 ❤‍🔥 🌚 🌭 💯 🤣 ⚡ 🍌 🏆 💔 🤨 😐 🍓 🍾 💋 🖕 😈 😴 😭 🤓 👻 👨‍💻 👀 🎃 🙈 😇 😨 🤝 ✍ 🤗 🫡 🎅 🎄 ☃ 💅 🤪 🗿 🆒 💘 🙉 🦄 😘 💊 🙊 😎 👾 🤷‍♂ 🤷 🤷‍♀ 😡`
+
+Emoji variation selectors are normalized, so both `❤` and `❤️` are accepted. Send an empty `reaction` array, or omit it, to clear the bot's current reaction.
 
 ```bash
 curl -X POST "$IMGRAM_API_ROOT/bot$IMGRAM_BOT_TOKEN/setMessageReaction" \

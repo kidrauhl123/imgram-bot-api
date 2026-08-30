@@ -13,7 +13,8 @@ Add a first-class `imgram` platform to CC Connect that:
 - accepts `token` and `api_base`, defaulting `api_base` to `https://bot.premsir.com`;
 - uses only methods marked supported in [COMPATIBILITY.md](../COMPATIBILITY.md);
 - maps incoming `message` and `edited_message` updates;
-- degrades unsupported bot-side downloads, commands, and buttons explicitly;
+- uses `getFile` for incoming media and `setMyCommands` for its stable command list;
+- degrades unsupported callbacks, inline buttons, and additional media methods explicitly;
 - exposes imGram checklists as a native capability instead of flattening them to text.
 
 Its channel runtime should implement the deterministic typing, streaming,

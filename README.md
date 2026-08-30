@@ -36,7 +36,7 @@ Consume incoming messages with [`getUpdates`](BOT_API.md#getupdates) or a [webho
 - [Connection guide for AI agents](CONNECT.md)
 - [Adapter implementation and UX contract](ADAPTER_GUIDE.md)
 - [OpenAPI 3.1 document](openapi.json)
-- Integration notes: [CC Connect](integrations/cc-connect.md), [OpenClaw](integrations/openclaw.md), [Hermes Agent](integrations/hermes.md)
+- Integration notes: [CC Connect](integrations/cc-connect.md), [OpenClaw](integrations/openclaw.md), [Hermes Agent](integrations/hermes.md), [nanobot](integrations/nanobot.md)
 - [Machine-readable documentation index](llms.txt)
 
 ## 中文说明

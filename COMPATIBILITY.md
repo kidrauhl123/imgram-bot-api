@@ -11,7 +11,7 @@ imGram v1 deliberately implements a useful Telegram-style subset. A matching met
 | `sendPhoto` | Partial | Multipart upload up to 50 MiB, caption formatting, and replies; no URL or `file_id` upload input. |
 | `sendDocument` | Partial | Multipart upload up to 50 MiB, filename/MIME type, caption formatting, and replies; no URL or `file_id` upload input. |
 | `sendChatAction` | Yes | Telegram action names are accepted and rendered by imGram clients. |
-| `setMessageReaction` | Partial | One of `👍 👎 ❤ 🔥 😁 🤔 👏 🤯 😱 😭 🤩 🤮 👌 🥴 🥱 🤡 🐳 🎉 🥰 🤣` per bot is supported; pass an empty array to clear it. Custom emoji and multiple simultaneous reactions are not supported. |
+| `setMessageReaction` | Partial | One of the 73 standard emoji listed in [BOT_API.md](BOT_API.md#setmessagereaction) per bot is supported; pass an empty array to clear it. Custom emoji and multiple simultaneous reactions are not supported. |
 | `editMessageText` | Partial | Text and the same parse modes/entities as `sendMessage`; Bot streaming edits hide the client “edited” marker; no inline-message editing or `reply_markup`. |
 | `deleteMessage` | Partial | `message_id` is used; `chat_id` is not currently required or read. |
 | `pinChatMessage` | Partial | Silent pin; advanced notification/business parameters are absent. |
@@ -49,9 +49,10 @@ imGram v1 deliberately implements a useful Telegram-style subset. A matching met
 | Connector | Can a user paste only an imGram token today? | Status |
 |---|---:|---|
 | Raw HTTP client | Yes | Supported; follow [CONNECT.md](CONNECT.md). |
-| OpenClaw Telegram channel | Not reliably | Experimental: custom `apiRoot` exists, but startup/runtime methods exceed the imGram subset. |
-| CC Connect Telegram platform | No | Its Telegram adapter currently targets Telegram's API root and uses unsupported media/action/command methods. An imGram adapter is required. |
+| OpenClaw Telegram channel | Not reliably | Experimental: custom `apiRoot` exists, but optional runtime methods can still exceed the imGram subset. |
+| CC Connect Telegram platform | No | Its Telegram adapter currently targets Telegram's API root and can use unsupported callbacks and additional media methods. An imGram adapter is required. |
 | Hermes Agent Telegram gateway | No | Its public configuration documents a Telegram token but no custom Bot API root. An endpoint option or imGram adapter is required. |
+| nanobot Telegram channel | No | Its runtime has compatible typing, streaming, commands, reactions, and media downloads, but currently lacks a configurable Bot API/file root and typed pin operation. |
 
 Compatibility is based on the currently published integrations, not on their project names. Recheck this table when either side changes. The product goal is 100% compatibility with the Telegram capabilities actually used by the official imGram adapters for OpenClaw, CC Connect, Hermes, and nanobot—not an untested claim that every Telegram Bot API method already exists.
 

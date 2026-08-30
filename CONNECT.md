@@ -87,5 +87,6 @@ For a slow response, the adapter should call `sendChatAction` with `action=typin
 - [OpenClaw](integrations/openclaw.md): closest path because it exposes a custom Telegram API root, but currently experimental with imGram.
 - [CC Connect](integrations/cc-connect.md): requires a dedicated imGram adapter or an upstream endpoint option.
 - [Hermes Agent](integrations/hermes.md): requires a custom endpoint option or adapter.
+- [nanobot](integrations/nanobot.md): its Telegram runtime already has the desired UX lifecycle, but needs configurable API and file roots plus a typed pin tool.
 
 These short guides document connector-specific facts. The Bot API reference remains the source of truth; a separate guide is not needed for every agent framework that can make ordinary HTTP requests.

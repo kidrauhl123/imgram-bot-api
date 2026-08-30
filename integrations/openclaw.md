@@ -18,7 +18,7 @@ OpenClaw's Telegram channel supports a custom `apiRoot`, so it can direct reques
 
 The API root must be the host root only. Do not append `/bot<TOKEN>`.
 
-This routing feature is necessary but not sufficient. OpenClaw's Telegram integration may call methods such as bot-command setup, chat actions, media/file operations, and inline-button operations that imGram v1 does not yet implement. A release that treats those failures as fatal may fail during startup or at runtime.
+This routing feature is necessary but not sufficient. imGram now supports bot-command setup, chat actions, photo/document upload, and incoming file download. OpenClaw releases may still call unsupported callback, inline-button, or additional media methods; a release that treats those optional failures as fatal may fail during startup or at runtime.
 
 Before using this in production:
 
