@@ -1,0 +1,148 @@
+diff --git a/nanobot/channels/imgram/runtime.py b/nanobot/channels/imgram/runtime.py
+--- a/nanobot/channels/imgram/runtime.py
++++ b/nanobot/channels/imgram/runtime.py
+@@ -20,7 +20,7 @@ from nanobot.bus.events import OutboundMessage
+ from nanobot.bus.outbound_events import ProgressEvent
+ from nanobot.bus.queue import MessageBus
+ from nanobot.channels.base import BaseChannel
+-from nanobot.config.paths import get_runtime_subdir
++from nanobot.config.paths import get_media_dir, get_runtime_subdir
+ from nanobot.config_base import Base
+ from nanobot.security.network import PinnedDNSAsyncTransport, resolve_url_target
+ from nanobot.utils.helpers import split_message
+@@ -30,11 +30,38 @@ IMGRAM_MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+ IMGRAM_API_ROOT = "https://bot.premsir.com"
+ _TRANSIENT_STATUS = frozenset({408, 429, 500, 502, 503, 504})
+ _SAFE_RETRY_METHODS = frozenset({
+-    "getMe", "getUpdates", "sendChatAction", "setMessageReaction",
++    "getMe", "getUpdates", "getFile", "setMyCommands", "sendChatAction", "setMessageReaction",
+     "editMessageText", "deleteMessage", "pinChatMessage", "unpinChatMessage",
+     "toggleChecklist", "appendChecklist",
+ })
+-_REACTION_EMOJI = frozenset({"👍", "👎", "❤", "❤️", "🔥", "😁", "🤔"})
++_REACTION_EMOJI = frozenset({
++    "❤", "❤️", "👍", "👎", "🔥", "🥰", "👏", "😁", "🤔", "🤯", "😱", "🤬",
++    "😢", "🎉", "🤩", "🤮", "💩", "🙏", "👌", "🕊", "🤡", "🥱", "🥴", "😍",
++    "🐳", "❤‍🔥", "🌚", "🌭", "💯", "🤣", "⚡", "🍌", "🏆", "💔", "🤨", "😐",
++    "🍓", "🍾", "💋", "🖕", "😈", "😴", "😭", "🤓", "👻", "👨‍💻", "👀", "🎃",
++    "🙈", "😇", "😨", "🤝", "✍", "🤗", "🫡", "🎅", "🎄", "☃", "💅", "🤪",
++    "🗿", "🆒", "💘", "🙉", "🦄", "😘", "💊", "🙊", "😎", "👾", "🤷‍♂",
++    "🤷", "🤷‍♀", "😡",
++})
++
++_BOT_COMMANDS = (
++    ("start", "开始使用"),
++    ("new", "开始新对话"),
++    ("stop", "停止当前任务"),
++    ("restart", "重启机器人"),
++    ("status", "查看机器人状态"),
++    ("history", "查看最近对话"),
++    ("goal", "开始一个长期目标"),
++    ("trigger", "创建本地触发器"),
++    ("pairing", "管理私聊配对"),
++    ("model", "切换模型"),
++    ("skill", "查看已启用技能"),
++    ("dream", "立即整理记忆"),
++    ("dream_log", "查看最近的记忆变化"),
++    ("dream_restore", "恢复之前的记忆"),
++    ("dream_prompt", "设置记忆整理方式"),
++    ("help", "查看可用命令"),
++)
+ 
+ 
+ def _escape_html(text: str) -> str:
+@@ -210,6 +237,16 @@ class ImgramChannel(BaseChannel):
+         me = await self._api("getMe")
+         self._bot_id = int(me.get("id")) if me.get("id") is not None else None
+         self._bot_username = str(me.get("username") or "")
++        try:
++            await self._api("setMyCommands", {
++                "commands": json.dumps(
++                    [{"command": command, "description": description} for command, description in _BOT_COMMANDS],
++                    ensure_ascii=False,
++                ),
++            })
++            self.logger.info("registered {} bot commands", len(_BOT_COMMANDS))
++        except Exception as exc:
++            self.logger.warning("failed to register bot commands: {}", exc)
+         self._running = True
+         self.logger.info("bot @{} connected", self._bot_username)
+ 
+@@ -332,20 +369,74 @@ class ImgramChannel(BaseChannel):
+             "is_edited": "edited_message" in update,
+             "imgram_media": media_meta,
+         }
+-        if media_meta:
+-            descriptions = ", ".join(item["type"] for item in media_meta)
+-            text = f"{text}\n[Imgram attachment metadata: {descriptions}]".strip()
++        media_paths, media_parts = await self._download_message_media(message)
++        content_parts = [text] if text else []
++        content_parts.extend(media_parts)
++        if message.get("checklist"):
++            content_parts.append("[Imgram checklist attached; structured data is in message metadata]")
++        text = "\n".join(content_parts) if content_parts else "[empty message]"
+         if self.is_allowed(sender_id):
+             await self._start_typing(chat_id, message.get("message_id"))
+         await self._handle_message(
+             sender_id=sender_id,
+             chat_id=chat_id,
+             content=text,
++            media=media_paths,
+             metadata=metadata,
+             session_key=f"imgram:{chat_id}",
+             is_dm=is_dm,
+         )
+ 
++    async def _download_message_media(
++        self, message: dict[str, Any]
++    ) -> tuple[list[str], list[str]]:
++        """Download the largest incoming photo or document and attach its real path."""
++        attachment: dict[str, Any] | None = None
++        media_type = "file"
++        photos = message.get("photo")
++        if isinstance(photos, list):
++            candidates = [item for item in photos if isinstance(item, dict) and item.get("file_id")]
++            if candidates:
++                attachment = max(
++                    candidates,
++                    key=lambda item: (
++                        int(item.get("file_size") or 0),
++                        int(item.get("width") or 0) * int(item.get("height") or 0),
++                    ),
++                )
++                media_type = "image"
++        if attachment is None and isinstance(message.get("document"), dict):
++            document = message["document"]
++            if document.get("file_id"):
++                attachment = document
++
++        if attachment is None:
++            return [], []
++
++        try:
++            file_info = await self._api("getFile", {"file_id": attachment["file_id"]})
++            remote_path = str(file_info.get("file_path") or "").lstrip("/")
++            if not remote_path:
++                raise RuntimeError("getFile returned no file_path")
++            if self._client is None:
++                raise RuntimeError("Imgram HTTP client is not initialized")
++            response = await self._client.get(f"/file/bot{self.config.token}/{remote_path}")
++            response.raise_for_status()
++            if len(response.content) > IMGRAM_MAX_UPLOAD_BYTES:
++                raise RuntimeError("incoming Imgram file exceeds 50 MiB")
++
++            original_name = str(attachment.get("file_name") or Path(remote_path).name)
++            suffix = Path(original_name).suffix or (".jpg" if media_type == "image" else "")
++            unique_id = str(attachment.get("file_unique_id") or attachment["file_id"])
++            safe_id = re.sub(r"[^A-Za-z0-9_-]", "_", unique_id)[:160] or "attachment"
++            destination = get_media_dir("imgram") / f"{safe_id}{suffix[:16]}"
++            destination.write_bytes(response.content)
++            path = str(destination)
++            return [path], [f"[{media_type}: {path}]"]
++        except Exception as exc:
++            self.logger.warning("failed to download incoming {}: {}", media_type, exc)
++            return [], [f"[{media_type}: download failed]"]
++
+     async def _start_typing(self, chat_id: str, source_message_id: Any = None) -> None:
+         self._stop_typing(chat_id)
+         with suppress(Exception):

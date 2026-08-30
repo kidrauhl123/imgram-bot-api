@@ -1,0 +1,28 @@
+diff --git a/nanobot/channels/telegram/runtime.py b/nanobot/channels/telegram/runtime.py
+--- a/nanobot/channels/telegram/runtime.py
++++ b/nanobot/channels/telegram/runtime.py
+@@ -404,6 +404,9 @@ class TelegramConfig(Base):
+ class TelegramConfig(Base):
+     """Telegram channel configuration."""
+ 
+     enabled: bool = False
+     token: str = ""
++    # Empty keeps Telegram's official endpoint. imGram deployments set this
++    # to the host root only, without /bot or the token.
++    api_root: str = ""
+     mode: Literal["polling", "webhook"] = "polling"
+@@ -633,7 +636,14 @@ class TelegramChannel(BaseChannel):
+         builder = (
+             Application.builder()
+             .token(self.config.token)
+             .request(api_request)
+             .get_updates_request(_LivenessTrackedRequest(poll_request, self._note_poll_ok))
+         )
++        api_root = self.config.api_root.strip().rstrip("/")
++        if api_root:
++            builder = (
++                builder
++                .base_url(f"{api_root}/bot")
++                .base_file_url(f"{api_root}/file/bot")
++            )
+         self._app = builder.build()

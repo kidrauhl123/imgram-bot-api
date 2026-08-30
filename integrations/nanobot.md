@@ -10,10 +10,48 @@ incoming media download, and temporary reactions. Its current configuration
 does not expose a custom Bot API root, so pasting an imGram token into the stock
 Telegram channel would still send it to Telegram.
 
-## Required transport patch
+## Apply the ready transport patch
 
-Add an `api_root` setting to a dedicated `imgram` channel and configure both
-URLs used by `python-telegram-bot`:
+Use the stock Telegram channel and apply
+[`nanobot-imgram.patch`](nanobot-imgram.patch) to the nanobot checkout. Do not
+replace its runtime with a minimal hand-written channel: doing so drops the
+command registration and media-download behavior that make the official
+channel useful.
+
+Existing installations that already use the earlier dedicated `imgram`
+channel can apply
+[`nanobot-imgram-runtime-fixes.patch`](nanobot-imgram-runtime-fixes.patch).
+That repair registers the real nanobot command list at startup, downloads
+incoming photo/document bytes into nanobot's media directory, and forwards the
+path through `InboundMessage.media` instead of sending attachment metadata only.
+
+```bash
+git -C /path/to/nanobot apply /path/to/imgram-bot-api/integrations/nanobot-imgram.patch
+```
+
+Then add `apiRoot` to nanobot's existing Telegram channel configuration:
+
+```json
+{
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "token": "YOUR_IMGRAM_BOT_TOKEN",
+      "apiRoot": "https://bot.premsir.com"
+    }
+  }
+}
+```
+
+Restart the nanobot gateway after changing the runtime or configuration. On
+startup, the unchanged official runtime calls `setMyCommands`; for incoming
+photos it calls `getFile`, downloads the bytes through `base_file_url`, and
+passes the local media path to the Agent.
+
+## What the patch changes
+
+The patch adds an `api_root` setting to the existing Telegram channel and
+configures both URLs used by `python-telegram-bot`:
 
 ```python
 api_root = self.config.api_root.rstrip("/")
