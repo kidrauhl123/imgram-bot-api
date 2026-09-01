@@ -85,8 +85,8 @@ For a slow response, the adapter should call `sendChatAction` with `action=typin
 ## Existing agent frameworks
 
 - [OpenClaw](integrations/openclaw.md): closest path because it exposes a custom Telegram API root, but currently experimental with imGram.
-- [CC Connect](integrations/cc-connect.md): requires a dedicated imGram adapter or an upstream endpoint option.
-- [Hermes Agent](integrations/hermes.md): requires a custom endpoint option or adapter.
+- [CC Connect](integrations/cc-connect.md): apply the version-pinned `imgram` platform patch, then use `type = "imgram"`.
+- [Hermes Agent](integrations/hermes.md): use its maintained Telegram adapter with `extra.base_url=https://bot.premsir.com/bot` and `extra.base_file_url=https://bot.premsir.com/file/bot`.
 - [nanobot](integrations/nanobot.md): a maintained imGram channel inherits its official Telegram runtime and adds verified native imGram actions.
 
 These short guides document connector-specific facts. The Bot API reference remains the source of truth; a separate guide is not needed for every agent framework that can make ordinary HTTP requests.

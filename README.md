@@ -59,6 +59,11 @@ Token: <IMGRAM_BOT_TOKEN>
 
 API 域名目前使用 `bot.premsir.com`，产品名是 **imGram**；域名不代表产品名。
 
+现成框架的优先路径是：nanobot 使用版本化 imGram 通道；Hermes 使用其
+Telegram 适配器的 `base_url` / `base_file_url` 配置；CC Connect 应用仓库内
+提供的小型 `imgram` 平台补丁。三者都应继续复用自身成熟的轮询、流式编辑、
+附件和命令菜单代码，而不是降级为普通 HTTP 收发循环。
+
 ## Security
 
 Treat a bot token as a password. Keep it out of source code, screenshots, issue reports, analytics, and logs. If a token is exposed, stop using it, create a replacement bot, and ask the imGram service operator to invalidate the exposed token. Self-service token revocation is not part of v1 yet.

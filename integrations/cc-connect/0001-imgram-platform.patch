@@ -1,0 +1,241 @@
+diff --git a/platform/telegram/telegram.go b/platform/telegram/telegram.go
+--- a/platform/telegram/telegram.go
++++ b/platform/telegram/telegram.go
+@@ -26,8 +26,14 @@ var telegramConvertAudioToOpus = core.ConvertAudioToOpus
+ 
+ func init() {
+ 	core.RegisterPlatform("telegram", New)
++	core.RegisterPlatform("imgram", NewImgram)
+ }
+ 
++const (
++	telegramAPIBase = "https://api.telegram.org"
++	imgramAPIBase   = "https://bot.premsir.com"
++)
++
+ type replyContext struct {
+ 	chatID    int64
+ 	threadID  int
+@@ -105,6 +111,8 @@ func (t *stdlibTypingTicker) C() <-chan time.Time { return t.Ticker.C }
+ type botFactory func(token string, onUpdate func(context.Context, *models.Update), httpClient *http.Client) (telegramBot, *models.User, func(context.Context), error)
+ 
+ type Platform struct {
++	platformName         string
++	apiBase              string
+ 	token                 string
+ 	allowFrom             string
+ 	groupReplyAll         bool
+@@ -135,12 +143,34 @@ const (
+ )
+ 
+ func New(opts map[string]any) (core.Platform, error) {
++	return newPlatform(opts, "telegram", telegramAPIBase)
++}
++
++// NewImgram registers the established Telegram transport under an isolated
++// imGram identity. Its only wire-level change is the Bot API root.
++func NewImgram(opts map[string]any) (core.Platform, error) {
++	return newPlatform(opts, "imgram", imgramAPIBase)
++}
++
++func newPlatform(opts map[string]any, platformName, defaultAPIBase string) (core.Platform, error) {
+ 	token, _ := opts["token"].(string)
+ 	if token == "" {
+-		return nil, fmt.Errorf("telegram: token is required")
++		return nil, fmt.Errorf("%s: token is required", platformName)
+ 	}
+ 	allowFrom, _ := opts["allow_from"].(string)
+-	core.CheckAllowFrom("telegram", allowFrom)
++	core.CheckAllowFrom(platformName, allowFrom)
++	apiBase, _ := opts["api_base"].(string)
++	apiBase = strings.TrimRight(strings.TrimSpace(apiBase), "/")
++	if apiBase == "" {
++		apiBase = defaultAPIBase
++	}
++	parsedAPIBase, err := url.Parse(apiBase)
++	if err != nil || parsedAPIBase.Scheme != "https" || parsedAPIBase.Host == "" {
++		return nil, fmt.Errorf("%s: api_base must be an https URL", platformName)
++	}
++	if platformName == "imgram" && strings.EqualFold(parsedAPIBase.Host, "api.telegram.org") {
++		return nil, fmt.Errorf("imgram: api_base must not point at api.telegram.org")
++	}
+ 
+ 	// Build HTTP client with optional proxy support.
+ 	// Timeout must exceed the server-side long-poll duration (pollTimeout − 1s = 59s)
+@@ -183,6 +215,11 @@ func New(opts map[string]any) (core.Platform, error) {
+ 	}
+ 
+ 	return &Platform{
++		platformName:         platformName,
++		apiBase:              apiBase,
++		newBot: func(token string, onUpdate func(context.Context, *models.Update), httpClient *http.Client) (telegramBot, *models.User, func(context.Context), error) {
++			return newBotWithServerURL(token, apiBase, onUpdate, httpClient)
++		},
+ 		token:                 token,
+ 		allowFrom:             allowFrom,
+ 		groupReplyAll:         groupReplyAll,
+@@ -193,7 +230,14 @@ func New(opts map[string]any) (core.Platform, error) {
+ 	}, nil
+ }
+ 
+-func (p *Platform) Name() string { return "telegram" }
++func (p *Platform) Name() string { return p.platformID() }
++
++func (p *Platform) platformID() string {
++	if p.platformName == "" {
++		return "telegram"
++	}
++	return p.platformName
++}
+ 
+ // ProgressStyle reports the streaming-progress style for this platform.
+ //
+@@ -250,12 +296,17 @@ func (p *Platform) SetLifecycleHandler(h core.PlatformLifecycleHandler) {
+ }
+ 
+ func defaultNewBot(token string, onUpdate func(context.Context, *models.Update), httpClient *http.Client) (telegramBot, *models.User, func(context.Context), error) {
++	return newBotWithServerURL(token, telegramAPIBase, onUpdate, httpClient)
++}
++
++func newBotWithServerURL(token, apiBase string, onUpdate func(context.Context, *models.Update), httpClient *http.Client) (telegramBot, *models.User, func(context.Context), error) {
+ 	handler := func(ctx context.Context, b *tgbot.Bot, update *models.Update) {
+ 		onUpdate(ctx, update)
+ 	}
+ 	opts := []tgbot.Option{
+ 		tgbot.WithDefaultHandler(handler),
+ 		tgbot.WithNotAsyncHandlers(),
++		tgbot.WithServerURL(apiBase),
+ 	}
+ 	if httpClient != nil {
+ 		opts = append(opts, tgbot.WithHTTPClient(60*time.Second, httpClient))
+@@ -273,7 +324,7 @@ func defaultNewBot(token string, onUpdate func(context.Context, *models.Update),
+ 
+ 	// Drain pending updates before starting polling to avoid 409 Conflict.
+ 	// This clears any outstanding long-poll request from a previous instance.
+-	drainPendingUpdates(token, httpClient)
++	drainPendingUpdates(token, apiBase, httpClient)
+ 
+ 	return b, me, b.Start, nil
+ }
+@@ -281,8 +332,8 @@ func defaultNewBot(token string, onUpdate func(context.Context, *models.Update),
+ // drainPendingUpdates clears any pending updates on Telegram's side by calling
+ // getUpdates with offset=-1. This terminates any outstanding long-poll request
+ // from a previous bot instance, preventing 409 Conflict errors on restart.
+-func drainPendingUpdates(token string, httpClient *http.Client) {
+-	apiURL := "https://api.telegram.org/bot" + token + "/getUpdates?offset=-1&timeout=0"
++func drainPendingUpdates(token, apiBase string, httpClient *http.Client) {
++	apiURL := strings.TrimRight(apiBase, "/") + "/bot" + token + "/getUpdates?offset=-1&timeout=0"
+ 	client := httpClient
+ 	if client == nil {
+ 		client = http.DefaultClient
+@@ -462,7 +513,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 		}
+ 		caption := stripBotMention(msg.Caption, botName)
+ 		p.dispatchMessage(&core.Message{
+-			SessionKey: sessionKey, Platform: "telegram",
++			SessionKey: sessionKey, Platform: p.platformID(),
+ 			UserID: userID, UserName: userName, ChatName: chatName,
+ 			Content:    caption,
+ 			MessageID:  strconv.Itoa(msg.ID),
+@@ -481,7 +532,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 			return
+ 		}
+ 		p.dispatchMessage(&core.Message{
+-			SessionKey: sessionKey, Platform: "telegram",
++			SessionKey: sessionKey, Platform: p.platformID(),
+ 			UserID: userID, UserName: userName, ChatName: chatName,
+ 			MessageID:  strconv.Itoa(msg.ID),
+ 			ChannelKey: channelKey,
+@@ -511,7 +562,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 			}
+ 		}
+ 		p.dispatchMessage(&core.Message{
+-			SessionKey: sessionKey, Platform: "telegram",
++			SessionKey: sessionKey, Platform: p.platformID(),
+ 			UserID: userID, UserName: userName, ChatName: chatName,
+ 			MessageID:  strconv.Itoa(msg.ID),
+ 			ChannelKey: channelKey,
+@@ -535,7 +586,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 		}
+ 		caption := stripBotMention(msg.Caption, botName)
+ 		p.dispatchMessage(&core.Message{
+-			SessionKey: sessionKey, Platform: "telegram",
++			SessionKey: sessionKey, Platform: p.platformID(),
+ 			UserID: userID, UserName: userName, ChatName: chatName,
+ 			Content:    caption,
+ 			MessageID:  strconv.Itoa(msg.ID),
+@@ -549,7 +600,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 	if msg.Location != nil {
+ 		slog.Info("telegram: location received", "user", userName, "latitude", msg.Location.Latitude, "longitude", msg.Location.Longitude)
+ 		p.dispatchMessage(&core.Message{
+-			SessionKey: sessionKey, Platform: "telegram",
++			SessionKey: sessionKey, Platform: p.platformID(),
+ 			UserID: userID, UserName: userName, ChatName: chatName,
+ 			MessageID:  strconv.Itoa(msg.ID),
+ 			ChannelKey: channelKey,
+@@ -572,7 +623,7 @@ func (p *Platform) handleMessage(ctx context.Context, msg *models.Message) {
+ 	text := stripBotMention(msg.Text, botName)
+ 	slog.Debug("telegram: message received", "user", userName, "chat", msg.Chat.ID)
+ 	p.dispatchMessage(&core.Message{
+-		SessionKey: sessionKey, Platform: "telegram",
++		SessionKey: sessionKey, Platform: p.platformID(),
+ 		UserID: userID, UserName: userName, ChatName: chatName,
+ 		Content:    text,
+ 		MessageID:  strconv.Itoa(msg.ID),
+@@ -635,14 +686,14 @@ func (p *Platform) reactToMessage(ctx context.Context, chatID int64, messageID i
+ func (p *Platform) buildSessionKey(chatID int64, threadID int, userID int64) string {
+ 	if p.shareSessionInChannel {
+ 		if threadID != 0 {
+-			return fmt.Sprintf("telegram:%d:%d", chatID, threadID)
++			return fmt.Sprintf("%s:%d:%d", p.platformID(), chatID, threadID)
+ 		}
+-		return fmt.Sprintf("telegram:%d", chatID)
++		return fmt.Sprintf("%s:%d", p.platformID(), chatID)
+ 	}
+ 	if threadID != 0 {
+-		return fmt.Sprintf("telegram:%d:%d:%d", chatID, threadID, userID)
++		return fmt.Sprintf("%s:%d:%d:%d", p.platformID(), chatID, threadID, userID)
+ 	}
+-	return fmt.Sprintf("telegram:%d:%d", chatID, userID)
++	return fmt.Sprintf("%s:%d:%d", p.platformID(), chatID, userID)
+ }
+ 
+ func buildChannelKey(chatID int64, threadID int) string {
+@@ -851,7 +902,7 @@ func (p *Platform) handleCallbackQuery(ctx context.Context, cb *models.CallbackQ
+ 
+ 		p.handler(p, &core.Message{
+ 			SessionKey: sessionKey,
+-			Platform:   "telegram",
++			Platform:   p.platformID(),
+ 			UserID:     userID,
+ 			UserName:   userName,
+ 			ChatName:   chatName,
+@@ -894,7 +945,7 @@ func (p *Platform) handleCallbackQuery(ctx context.Context, cb *models.CallbackQ
+ 
+ 		p.handler(p, &core.Message{
+ 			SessionKey: sessionKey,
+-			Platform:   "telegram",
++			Platform:   p.platformID(),
+ 			UserID:     userID,
+ 			UserName:   userName,
+ 			ChatName:   chatName,
+@@ -945,7 +996,7 @@ func (p *Platform) handleCallbackQuery(ctx context.Context, cb *models.CallbackQ
+ 
+ 	p.handler(p, &core.Message{
+ 		SessionKey:           sessionKey,
+-		Platform:             "telegram",
++		Platform:             p.platformID(),
+ 		UserID:               userID,
+ 		UserName:             userName,
+ 		ChatName:             chatName,
+@@ -1375,8 +1426,8 @@ func (p *Platform) ReconstructReplyCtx(sessionKey string) (any, error) {
+ 	//   telegram:{chatID}:{userID}             - per-user session, no topic
+ 	//   telegram:{chatID}:{threadID}:{userID}  - per-user session, with topic
+ 	parts := strings.SplitN(sessionKey, ":", 5)
+-	if len(parts) < 2 || parts[0] != "telegram" {
+-		return nil, fmt.Errorf("telegram: invalid session key %q", sessionKey)
++	if len(parts) < 2 || parts[0] != p.platformID() {
++		return nil, fmt.Errorf("%s: invalid session key %q", p.platformID(), sessionKey)
+ 	}
+ 	chatID, err := strconv.ParseInt(parts[1], 10, 64)
+ 	if err != nil {

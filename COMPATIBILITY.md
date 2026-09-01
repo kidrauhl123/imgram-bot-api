@@ -53,8 +53,8 @@ imGram v1 deliberately implements a useful Telegram-style subset. A matching met
 |---|---:|---|
 | Raw HTTP client | Yes | Supported; follow [CONNECT.md](CONNECT.md). |
 | OpenClaw Telegram channel | Not reliably | Experimental: custom `apiRoot` exists, but optional runtime methods can still exceed the imGram subset. |
-| CC Connect Telegram platform | No | Its Telegram adapter currently targets Telegram's API root and can use unsupported callbacks and additional media methods. An imGram adapter is required. |
-| Hermes Agent Telegram gateway | No | Its public configuration documents a Telegram token but no custom Bot API root. An endpoint option or imGram adapter is required. |
+| CC Connect imGram platform patch | No — apply once | Version-pinned patch exposes the existing Telegram runtime as `type = "imgram"`, with an imGram-only API root and isolated session IDs. |
+| Hermes Agent Telegram gateway | Yes, with two endpoint settings | Its maintained Telegram adapter accepts `extra.base_url` and `extra.base_file_url`; native imGram actions are available through the companion plugin. |
 | nanobot imGram channel | Yes | Versioned v0.3.0 overlay inherits the official Telegram runtime, isolates the API/file roots, and adds typed pin/checklist/article actions. |
 
 Compatibility is based on the currently published integrations, not on their project names. Recheck this table when either side changes. The product goal is 100% compatibility with the Telegram capabilities actually used by the official imGram adapters for OpenClaw, CC Connect, Hermes, and nanobot—not an untested claim that every Telegram Bot API method already exists.

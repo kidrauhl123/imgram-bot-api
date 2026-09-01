@@ -1,0 +1,17 @@
+name: imgram-actions
+label: imGram actions
+kind: tool
+version: 1.0.0
+description: Native imGram message actions for Hermes Agent's imGram-backed Telegram adapter.
+author: imGram
+provides_tools:
+  - imgram_action
+optional_env:
+  - name: IMGRAM_API_ROOT
+    description: "imGram Bot API root (default: https://bot.premsir.com)"
+    prompt: "imGram API root"
+    password: false
+  - name: IMGRAM_BOT_TOKEN
+    description: "Optional override; otherwise Hermes Telegram bot token is used"
+    prompt: "imGram bot token"
+    password: true
